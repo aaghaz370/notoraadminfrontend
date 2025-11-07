@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:9090/api/books";
+const API_URL = "https://notoraadminbackend-1.onrender.com/api/books";
 const bookSection = document.getElementById("bookSection");
 
 // 🌓 Theme Handling
@@ -53,3 +53,4 @@ function editBook(id) {
 }
 
 fetchBooks();
+
