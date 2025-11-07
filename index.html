@@ -167,6 +167,13 @@
   </style>
 </head>
 <body>
+  <script>
+  const isAdmin = localStorage.getItem("isAdmin");
+  if (!isAdmin) {
+    window.location.href = "login.html";
+  }
+</script>
+
   <header>
     <div>
       <h1>📚 Notora Admin Panel</h1>
@@ -308,4 +315,5 @@ allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   </script>
 </body>
 </html>
+
 
