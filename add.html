@@ -75,6 +75,13 @@
   </style>
 </head>
 <body>
+  <script>
+  const isAdmin = localStorage.getItem("isAdmin");
+  if (!isAdmin) {
+    window.location.href = "login.html";
+  }
+</script>
+
   <div class="container">
     <h2>➕ Add New Book</h2>
     <form id="bookForm">
@@ -127,6 +134,7 @@
   </script>
 </body>
 </html>
+
 
 
 
