@@ -3,114 +3,271 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Dashboard - Notora</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Notora Admin Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #181818;
+      padding: 15px 25px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid crimson;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #ff3c3c;
+      font-weight: 600;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    input, select, button {
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+    }
+
+    input {
+      background: #222;
+      color: white;
+      width: 180px;
+    }
+
+    select {
+      background: #222;
+      color: white;
+    }
+
+    button {
+      background: crimson;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #ff1e1e;
+    }
+
+    main {
+      flex: 1;
+      padding: 20px;
+    }
+
+    .book-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+    }
+
+    .book-card {
+      background: #1b1b1b;
+      border-radius: 12px;
+      overflow: hidden;
+      text-align: center;
+      transition: 0.3s;
+      box-shadow: 0 0 8px rgba(255, 0, 0, 0.1);
+    }
+
+    .book-card:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+    }
+
+    .book-card img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+    }
+
+    .book-card h3 {
+      margin: 10px 0 5px;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .book-card p {
+      margin: 0;
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    .book-card strong {
+      color: #ff3c3c;
+    }
+
+    .actions {
+      margin: 8px 0 12px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .edit-btn, .delete-btn {
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      border: none;
+      color: white;
+      transition: 0.3s;
+    }
+
+    .edit-btn { background: #007bff; }
+    .edit-btn:hover { background: #0056b3; }
+    .delete-btn { background: #d11a2a; }
+    .delete-btn:hover { background: #a10f1c; }
+
+    .skeleton-card {
+      background: #1b1b1b;
+      border-radius: 12px;
+      padding: 10px;
+      animation: pulse 1.4s infinite;
+    }
+
+    .skeleton-card .img {
+      height: 220px;
+      border-radius: 8px;
+      background: #2a2a2a;
+    }
+
+    .skeleton-card .text {
+      height: 20px;
+      width: 60%;
+      margin: 10px auto;
+      background: #2a2a2a;
+      border-radius: 5px;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+  </style>
 </head>
 <body>
   <header>
-    <h1>📚 Notora Admin Panel</h1>
-    <div class="controls">
-      <input type="text" id="search" placeholder="Search by name or author..." />
-      <select id="filterGenre">
-        <option value="">All Genres</option>
-      </select>
-      <select id="filterSort">
-        <option value="">Sort By</option>
-        <option value="a-z">A → Z</option>
-        <option value="z-a">Z → A</option>
-        <option value="rating-high">Rating ↑</option>
-        <option value="rating-low">Rating ↓</option>
-      </select>
-      <button id="addBtn">➕ Add Book</button>
+    <div>
+      <h1>📚 Notora Admin Panel</h1>
+      <div class="controls">
+        <input type="text" id="search" placeholder="Search by name or author..." />
+        <select id="filterGenre">
+          <option value="">All Genres</option>
+        </select>
+        <select id="filterSort">
+          <option value="">Sort By</option>
+          <option value="a-z">A → Z</option>
+          <option value="z-a">Z → A</option>
+          <option value="rating-high">Rating ↑</option>
+          <option value="rating-low">Rating ↓</option>
+        </select>
+        <button onclick="window.location.href='add.html'">➕ Add</button>
+        <button onclick="window.location.href='upload.html'">📦 Upload JSON</button>
+      </div>
     </div>
   </header>
 
-  <main id="bookContainer" class="book-grid">
-    <!-- Skeleton loader -->
+  <main>
+    <div id="bookContainer" class="book-grid"></div>
     <div id="skeletons"></div>
   </main>
 
   <script>
-    const API_URL = "http://localhost:9090/api/books";
+    const API_URL = "https://notoraadminbackend-1.onrender.com/api/books";
     const bookContainer = document.getElementById("bookContainer");
     const searchInput = document.getElementById("search");
     const genreFilter = document.getElementById("filterGenre");
     const sortFilter = document.getElementById("filterSort");
     const skeletons = document.getElementById("skeletons");
+    let allBooks = [];
 
     // Skeleton Loader
-    function showSkeleton(count = 6) {
+    function showSkeleton(count = 8) {
       skeletons.innerHTML = "";
       for (let i = 0; i < count; i++) {
-        const skel = document.createElement("div");
-        skel.className = "skeleton-card";
-        skel.innerHTML = `<div class="img"></div><div class="text"></div>`;
-        skeletons.appendChild(skel);
+        const div = document.createElement("div");
+        div.className = "skeleton-card";
+        div.innerHTML = `<div class="img"></div><div class="text"></div>`;
+        skeletons.appendChild(div);
       }
     }
 
+    // Fetch Books
     async function fetchBooks() {
       showSkeleton();
       try {
         const res = await fetch(API_URL);
-        const books = await res.json();
-        renderBooks(books);
-        populateGenreFilter(books);
+        allBooks = await res.json();
+        allBooks.reverse(); // latest first
+        renderBooks(allBooks);
+        populateGenres();
       } catch (err) {
-        console.error("Failed to load books:", err);
+        console.error("Error loading books:", err);
+        bookContainer.innerHTML = "<p>⚠️ Failed to load books.</p>";
+      } finally {
+        skeletons.innerHTML = "";
       }
     }
 
+    // Render
     function renderBooks(books) {
-      skeletons.innerHTML = "";
       bookContainer.innerHTML = "";
       if (books.length === 0) {
         bookContainer.innerHTML = "<p>No books found.</p>";
         return;
       }
-
-      // Latest first
-      books.reverse().forEach((book) => {
-        const div = document.createElement("div");
-        div.className = "book-card";
-        div.innerHTML = `
-          <img src="${book.thumbnail}" alt="${book.name}" />
-          <h3>${book.name}</h3>
-          <p>${book.author}</p>
-          <p><strong>${book.genre}</strong> | ⭐ ${book.rating}</p>
+      books.forEach((b) => {
+        const card = document.createElement("div");
+        card.className = "book-card";
+        card.innerHTML = `
+          <img src="${b.thumbnail}" alt="${b.name}" />
+          <h3>${b.name}</h3>
+          <p>${b.author}</p>
+          <p><strong>${b.genre}</strong> | ⭐ ${b.rating}</p>
           <div class="actions">
-            <a href="edit.html?id=${book._id}" class="edit-btn">✏️ Edit</a>
-            <button onclick="deleteBook('${book._id}')" class="delete-btn">🗑 Delete</button>
+            <button class="edit-btn" onclick="editBook('${b._id}')">Edit</button>
+            <button class="delete-btn" onclick="deleteBook('${b._id}')">Delete</button>
           </div>
         `;
-        bookContainer.appendChild(div);
+        bookContainer.appendChild(card);
       });
     }
 
-    async function deleteBook(id) {
-      if (!confirm("Are you sure to delete this book?")) return;
-      try {
-        const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("Failed to delete");
-        fetchBooks();
-      } catch (err) {
-        alert("❌ Failed to delete book");
-      }
+    // Populate Genre Dropdown
+    function populateGenres() {
+      const genres = [...new Set(allBooks.map((b) => b.genre))];
+      genreFilter.innerHTML = `<option value="">All Genres</option>` +
+        genres.map((g) => `<option value="${g}">${g}</option>`).join("");
     }
 
-    // Search and Filters
-    searchInput.addEventListener("input", () => filterBooks());
-    genreFilter.addEventListener("change", () => filterBooks());
-    sortFilter.addEventListener("change", () => filterBooks());
+    // Search + Filter
+    searchInput.addEventListener("input", filterBooks);
+    genreFilter.addEventListener("change", filterBooks);
+    sortFilter.addEventListener("change", filterBooks);
 
-    function populateGenreFilter(books) {
-      const genres = [...new Set(books.map((b) => b.genre))];
-      genreFilter.innerHTML = `<option value="">All Genres</option>` + genres.map((g) => `<option value="${g}">${g}</option>`).join("");
-    }
-
-    async function filterBooks() {
-      const res = await fetch(API_URL);
-      let books = await res.json();
+    function filterBooks() {
+      let books = [...allBooks];
       const search = searchInput.value.toLowerCase();
       const genre = genreFilter.value;
       const sort = sortFilter.value;
@@ -128,29 +285,24 @@
       renderBooks(books);
     }
 
-    // On load
+    // Delete
+    async function deleteBook(id) {
+      if (!confirm("Delete this book?")) return;
+      try {
+        const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Delete failed");
+        fetchBooks();
+      } catch (err) {
+        alert("❌ Failed to delete book.");
+      }
+    }
+
+    // Edit
+    function editBook(id) {
+      window.location.href = `edit.html?id=${id}`;
+    }
+
     fetchBooks();
   </script>
-
-  <style>
-    body { font-family: sans-serif; background: #111; color: #fff; padding: 20px; }
-    header { display: flex; flex-direction: column; gap: 10px; }
-    .controls { display: flex; gap: 10px; flex-wrap: wrap; }
-    input, select, button { padding: 8px; border-radius: 6px; border: none; }
-    button { background: crimson; color: #fff; cursor: pointer; }
-    .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
-    .book-card { background: #222; padding: 10px; border-radius: 10px; text-align: center; transition: 0.3s; }
-    .book-card:hover { transform: scale(1.03); background: #292929; }
-    .book-card img { width: 100%; height: 220px; object-fit: cover; border-radius: 8px; }
-    .actions { margin-top: 8px; display: flex; justify-content: center; gap: 10px; }
-    .edit-btn, .delete-btn { text-decoration: none; color: white; font-size: 14px; background: #333; padding: 5px 8px; border-radius: 5px; }
-    .edit-btn:hover { background: #0066ff; }
-    .delete-btn:hover { background: #d00; }
-    .skeleton-card { background: #222; border-radius: 10px; padding: 10px; animation: pulse 1.5s infinite; }
-    .skeleton-card .img { background: #333; height: 200px; border-radius: 8px; }
-    .skeleton-card .text { background: #333; height: 20px; width: 60%; margin: 10px auto; border-radius: 4px; }
-    @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.4;} 100%{opacity:1;} }
-  </style>
 </body>
 </html>
-
