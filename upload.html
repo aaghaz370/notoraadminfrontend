@@ -33,11 +33,11 @@
 </head>
 <body>
   <script>
-  const isAdmin = localStorage.getItem("isAdmin");
-  if (!isAdmin) {
+  if (!localStorage.getItem("isAdmin")) {
     window.location.href = "login.html";
   }
 </script>
+
 
   <h2>📦 Bulk Upload Books (JSON)</h2>
 
