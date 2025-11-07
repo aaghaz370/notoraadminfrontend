@@ -51,7 +51,8 @@
   </div>
 
   <script>
-    const ADMIN_PASSWORD = "aaghaz9431"; // 👈 yahan apna password set karo
+    // ✅ Pull password from environment variable
+    const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD; 
 
     function login() {
       const entered = document.getElementById("password").value.trim();
@@ -65,3 +66,4 @@
   </script>
 </body>
 </html>
+
