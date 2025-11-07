@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bulk JSON Upload</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #222;
+      color: white;
+      text-align: center;
+      padding-top: 80px;
+    }
+    input[type="file"] {
+      margin-top: 20px;
+      background: #444;
+      color: white;
+      padding: 8px;
+      border-radius: 5px;
+    }
+    button {
+      margin-top: 15px;
+      background: crimson;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover { background: red; }
+  </style>
+</head>
+<body>
+  <h2>📦 Bulk Upload Books (JSON)</h2>
+
+  <input type="file" id="jsonFile" accept=".json" />
+  <br />
+  <button id="uploadBtn">Upload</button>
+
+  <script>
+    document.getElementById("uploadBtn").addEventListener("click", async () => {
+      const fileInput = document.getElementById("jsonFile");
+      if (!fileInput.files.length) {
+        alert("Please select a JSON file first.");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const text = await file.text();
+
+      let jsonData;
+      try {
+        jsonData = JSON.parse(text);
+      } catch (err) {
+        alert("❌ Invalid JSON file.");
+        return;
+      }
+
+      console.log("📤 Uploading", jsonData.length, "books...");
+
+      try {
+        const res = await fetch("https://notoraadminbackend-1.onrender.com/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(jsonData),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        alert(data.message);
+      } catch (err) {
+        console.error(err);
+        alert("❌ Upload failed: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
