@@ -35,7 +35,7 @@
 
 
       try {
-        const res = await fetch("http://localhost:9090/api/books", {
+        const res = await fetch("https://notoraadminbackend-1.onrender.com/api/books", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(bookData),
@@ -54,3 +54,4 @@
   </script>
 </body>
 </html>
+
