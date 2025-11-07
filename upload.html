@@ -32,6 +32,13 @@
   </style>
 </head>
 <body>
+  <script>
+  const isAdmin = localStorage.getItem("isAdmin");
+  if (!isAdmin) {
+    window.location.href = "login.html";
+  }
+</script>
+
   <h2>📦 Bulk Upload Books (JSON)</h2>
 
   <input type="file" id="jsonFile" accept=".json" />
