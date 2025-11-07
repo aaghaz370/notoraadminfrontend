@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Notora</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>📚 Notora Admin Panel</h1>
+    <div class="controls">
+      <input type="text" id="search" placeholder="Search by name or author..." />
+      <select id="filterGenre">
+        <option value="">All Genres</option>
+      </select>
+      <select id="filterSort">
+        <option value="">Sort By</option>
+        <option value="a-z">A → Z</option>
+        <option value="z-a">Z → A</option>
+        <option value="rating-high">Rating ↑</option>
+        <option value="rating-low">Rating ↓</option>
+      </select>
+      <button id="addBtn">➕ Add Book</button>
+    </div>
+  </header>
+
+  <main id="bookContainer" class="book-grid">
+    <!-- Skeleton loader -->
+    <div id="skeletons"></div>
+  </main>
+
+  <script>
+    const API_URL = "http://localhost:9090/api/books";
+    const bookContainer = document.getElementById("bookContainer");
+    const searchInput = document.getElementById("search");
+    const genreFilter = document.getElementById("filterGenre");
+    const sortFilter = document.getElementById("filterSort");
+    const skeletons = document.getElementById("skeletons");
+
+    // Skeleton Loader
+    function showSkeleton(count = 6) {
+      skeletons.innerHTML = "";
+      for (let i = 0; i < count; i++) {
+        const skel = document.createElement("div");
+        skel.className = "skeleton-card";
+        skel.innerHTML = `<div class="img"></div><div class="text"></div>`;
+        skeletons.appendChild(skel);
+      }
+    }
+
+    async function fetchBooks() {
+      showSkeleton();
+      try {
+        const res = await fetch(API_URL);
+        const books = await res.json();
+        renderBooks(books);
+        populateGenreFilter(books);
+      } catch (err) {
+        console.error("Failed to load books:", err);
+      }
+    }
+
+    function renderBooks(books) {
+      skeletons.innerHTML = "";
+      bookContainer.innerHTML = "";
+      if (books.length === 0) {
+        bookContainer.innerHTML = "<p>No books found.</p>";
+        return;
+      }
+
+      // Latest first
+      books.reverse().forEach((book) => {
+        const div = document.createElement("div");
+        div.className = "book-card";
+        div.innerHTML = `
+          <img src="${book.thumbnail}" alt="${book.name}" />
+          <h3>${book.name}</h3>
+          <p>${book.author}</p>
+          <p><strong>${book.genre}</strong> | ⭐ ${book.rating}</p>
+          <div class="actions">
+            <a href="edit.html?id=${book._id}" class="edit-btn">✏️ Edit</a>
+            <button onclick="deleteBook('${book._id}')" class="delete-btn">🗑 Delete</button>
+          </div>
+        `;
+        bookContainer.appendChild(div);
+      });
+    }
+
+    async function deleteBook(id) {
+      if (!confirm("Are you sure to delete this book?")) return;
+      try {
+        const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Failed to delete");
+        fetchBooks();
+      } catch (err) {
+        alert("❌ Failed to delete book");
+      }
+    }
+
+    // Search and Filters
+    searchInput.addEventListener("input", () => filterBooks());
+    genreFilter.addEventListener("change", () => filterBooks());
+    sortFilter.addEventListener("change", () => filterBooks());
+
+    function populateGenreFilter(books) {
+      const genres = [...new Set(books.map((b) => b.genre))];
+      genreFilter.innerHTML = `<option value="">All Genres</option>` + genres.map((g) => `<option value="${g}">${g}</option>`).join("");
+    }
+
+    async function filterBooks() {
+      const res = await fetch(API_URL);
+      let books = await res.json();
+      const search = searchInput.value.toLowerCase();
+      const genre = genreFilter.value;
+      const sort = sortFilter.value;
+
+      if (search) books = books.filter(b => b.name.toLowerCase().includes(search) || b.author.toLowerCase().includes(search));
+      if (genre) books = books.filter(b => b.genre === genre);
+
+      switch (sort) {
+        case "a-z": books.sort((a, b) => a.name.localeCompare(b.name)); break;
+        case "z-a": books.sort((a, b) => b.name.localeCompare(a.name)); break;
+        case "rating-high": books.sort((a, b) => b.rating - a.rating); break;
+        case "rating-low": books.sort((a, b) => a.rating - b.rating); break;
+      }
+
+      renderBooks(books);
+    }
+
+    // On load
+    fetchBooks();
+  </script>
+
+  <style>
+    body { font-family: sans-serif; background: #111; color: #fff; padding: 20px; }
+    header { display: flex; flex-direction: column; gap: 10px; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+    input, select, button { padding: 8px; border-radius: 6px; border: none; }
+    button { background: crimson; color: #fff; cursor: pointer; }
+    .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+    .book-card { background: #222; padding: 10px; border-radius: 10px; text-align: center; transition: 0.3s; }
+    .book-card:hover { transform: scale(1.03); background: #292929; }
+    .book-card img { width: 100%; height: 220px; object-fit: cover; border-radius: 8px; }
+    .actions { margin-top: 8px; display: flex; justify-content: center; gap: 10px; }
+    .edit-btn, .delete-btn { text-decoration: none; color: white; font-size: 14px; background: #333; padding: 5px 8px; border-radius: 5px; }
+    .edit-btn:hover { background: #0066ff; }
+    .delete-btn:hover { background: #d00; }
+    .skeleton-card { background: #222; border-radius: 10px; padding: 10px; animation: pulse 1.5s infinite; }
+    .skeleton-card .img { background: #333; height: 200px; border-radius: 8px; }
+    .skeleton-card .text { background: #333; height: 20px; width: 60%; margin: 10px auto; border-radius: 4px; }
+    @keyframes pulse { 0%{opacity:1;} 50%{opacity:0.4;} 100%{opacity:1;} }
+  </style>
+</body>
+</html>
+

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Book</title>
+</head>
+<body>
+  <h2>Add New Book</h2>
+
+  <form id="bookForm">
+    <input id="name" placeholder="Book Name" required /><br />
+    <input id="author" placeholder="Author" required /><br />
+    <input id="genre" placeholder="Genre" required /><br />
+    <input id="rating" type="number" step="0.1" placeholder="Rating" /><br />
+    <input id="thumbnail" placeholder="Thumbnail URL" /><br />
+    <input id="pdfUrl" placeholder="PDF URL" /><br />
+    <button type="submit">Add Book</button>
+  </form>
+
+  <script>
+    document.getElementById("bookForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const bookData = {
+        name: document.getElementById("name").value.trim(),
+        author: document.getElementById("author").value.trim(),
+        genre: document.getElementById("genre").value.trim(),
+        rating: parseFloat(document.getElementById("rating").value),
+        thumbnail: document.getElementById("thumbnail").value.trim(),
+        pdfUrl: document.getElementById("pdfUrl").value.trim(),
+      };
+
+      console.log("📤 Sending book data:", bookData);
+
+
+      try {
+        const res = await fetch("http://localhost:9090/api/books", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bookData),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+
+        alert("✅ Book added successfully!");
+        e.target.reset();
+      } catch (err) {
+        console.error("Error:", err);
+        alert("❌ Failed to add book");
+      }
+    });
+  </script>
+</body>
+</html>
