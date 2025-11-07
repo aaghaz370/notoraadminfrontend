@@ -219,7 +219,9 @@
       try {
         const res = await fetch(API_URL);
         allBooks = await res.json();
-        allBooks.reverse(); // latest first
+// ✅ Sort by creation time descending if timestamps exist, fallback to reverse
+allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
         renderBooks(allBooks);
         populateGenres();
       } catch (err) {
@@ -306,3 +308,4 @@
   </script>
 </body>
 </html>
+
