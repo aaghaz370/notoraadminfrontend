@@ -167,12 +167,12 @@
   </style>
 </head>
 <body>
-  <script>
-  const isAdmin = localStorage.getItem("isAdmin");
-  if (!isAdmin) {
+ <script>
+  if (!localStorage.getItem("isAdmin")) {
     window.location.href = "login.html";
   }
 </script>
+
 
   <header>
     <div>
@@ -315,5 +315,6 @@ allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   </script>
 </body>
 </html>
+
 
 
