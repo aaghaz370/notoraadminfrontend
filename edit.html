@@ -75,12 +75,12 @@
   </style>
 </head>
 <body>
-  <script>
-  const isAdmin = localStorage.getItem("isAdmin");
-  if (!isAdmin) {
+ <script>
+  if (!localStorage.getItem("isAdmin")) {
     window.location.href = "login.html";
   }
 </script>
+
 
   <div class="container">
     <h2>✏️ Edit Book</h2>
@@ -150,6 +150,7 @@
   </script>
 </body>
 </html>
+
 
 
 
