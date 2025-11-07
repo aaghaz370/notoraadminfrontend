@@ -23,7 +23,7 @@
     const bookId = params.get("id");
 
     async function loadBook() {
-      const res = await fetch("http://localhost:9090/api/books");
+      const res = await fetch("https://notoraadminbackend-1.onrender.com/api/books");
       const data = await res.json();
       const book = data.find((b) => b._id === bookId);
       if (!book) return alert("Book not found");
@@ -50,7 +50,7 @@
       };
 
       try {
-        const res = await fetch(`http://localhost:9090/api/books/${bookId}`, {
+        const res = await fetch(`https://notoraadminbackend-1.onrender.com/api/books/${bookId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(bookData),
@@ -69,4 +69,5 @@
   </script>
 </body>
 </html>
+
 
