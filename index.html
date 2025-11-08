@@ -256,6 +256,8 @@ allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           <p><strong>${b.genre}</strong> | ⭐ ${b.rating}</p>
           <div class="actions">
             <button class="edit-btn" onclick="editBook('${b._id}')">Edit</button>
+            <button class="view-btn" onclick="viewBook('${b._id}')">View</button>
+
             <button class="delete-btn" onclick="deleteBook('${b._id}')">Delete</button>
           </div>
         `;
@@ -312,9 +314,15 @@ allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
 
     fetchBooks();
+
+    function viewBook(id) {
+  window.location.href = `bookView.html?id=${id}`;
+}
+
   </script>
 </body>
 </html>
+
 
 
 
