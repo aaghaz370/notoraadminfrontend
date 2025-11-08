@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Book View | Notora</title>
+  <link rel="icon" href="images/logo.png" />
+  <script src="https://kit.fontawesome.com/1c020da525.js" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      background: radial-gradient(circle at top, #111 0%, #000 100%);
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(12px);
+    }
+
+    .back-arrow {
+      position: absolute;
+      left: 20px;
+      font-size: 1.6rem;
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    .back-arrow:hover {
+      transform: translateX(-5px);
+    }
+
+    .pdf-container {
+      margin: 2rem auto 1rem;
+      width: 90%;
+      max-width: 900px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 1rem;
+      box-shadow: 0 0 30px rgba(255, 0, 0, 0.12);
+    }
+
+    iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+      border-radius: 10px;
+    }
+
+    .book-meta {
+      width: 90%;
+      max-width: 900px;
+      margin: 1.5rem auto;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 1.5rem;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    /* Comments */
+    .comments-wrapper {
+      width: 90%;
+      max-width: 900px;
+      margin: 2rem auto 3rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 1.5rem;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+    }
+
+    .comment-card {
+      background: rgba(255, 255, 255, 0.07);
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .comment-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .comment-name {
+      font-weight: 600;
+      color: #ffb;
+    }
+
+    .comment-text {
+      margin: 8px 0 0;
+      font-size: 0.95rem;
+      color: #eee;
+    }
+
+    .menu-btn {
+      background: transparent;
+      border: none;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    .menu-popup {
+      position: absolute;
+      background: #222;
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 5px;
+      z-index: 1000;
+      width: 100px;
+    }
+
+    .menu-popup button {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      color: white;
+      text-align: left;
+      padding: 6px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .menu-popup button:hover {
+      background: #333;
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: #999;
+      font-size: 0.95rem;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <i class="fa-solid fa-arrow-left back-arrow" onclick="window.history.back()"></i>
+    <h1 id="bookName">Book Details</h1>
+  </header>
+
+  <div class="pdf-container">
+    <iframe id="bookPdf"></iframe>
+  </div>
+
+  <section class="book-meta">
+    <p><strong>Author:</strong> <span id="bookAuthor"></span></p>
+    <p><strong>Genre:</strong> <span id="bookGenre"></span></p>
+    <p><strong>Rating:</strong> ⭐ <span id="bookRating"></span></p>
+  </section>
+
+  <div class="comments-wrapper">
+    <h3>💬 User Comments (Admin Controls)</h3>
+    <div id="commentsList"><p class="empty-msg">Loading comments...</p></div>
+  </div>
+
+  <script>
+    const BACKEND = "https://notoraadminbackend-1.onrender.com";
+    const BOOKS_API = `${BACKEND}/api/books`;
+    const COMMENTS_API = `${BACKEND}/api/comments`;
+
+    // ✅ Redirect if not admin
+    if (!localStorage.getItem("isAdmin")) {
+      location.href = "login.html";
+    }
+
+    // ✅ Extract Book ID from URL
+    const params = new URLSearchParams(location.search);
+    const bookId = params.get("id");
+    if (!bookId) {
+      alert("Invalid Book ID");
+      location.href = "home.html";
+    }
+
+    const bookName = document.getElementById("bookName");
+    const bookAuthor = document.getElementById("bookAuthor");
+    const bookGenre = document.getElementById("bookGenre");
+    const bookRating = document.getElementById("bookRating");
+    const bookPdf = document.getElementById("bookPdf");
+    const commentsList = document.getElementById("commentsList");
+
+    // 📘 Load Book Info
+    async function loadBook() {
+      try {
+        const res = await fetch(`${BOOKS_API}/${bookId}`);
+        const book = await res.json();
+        bookName.textContent = book.name;
+        bookAuthor.textContent = book.author;
+        bookGenre.textContent = book.genre;
+        bookRating.textContent = book.rating || "N/A";
+        bookPdf.src = book.pdfUrl;
+      } catch (err) {
+        console.error("Book load error:", err);
+      }
+    }
+
+    // 💬 Load Comments
+    async function loadComments() {
+      try {
+        const res = await fetch(`${COMMENTS_API}/${bookId}`);
+        const comments = await res.json();
+        commentsList.innerHTML = "";
+        if (!comments.length) {
+          commentsList.innerHTML = `<p class="empty-msg">No comments yet.</p>`;
+          return;
+        }
+
+        comments.forEach(c => {
+          const div = document.createElement("div");
+          div.className = "comment-card";
+          div.innerHTML = `
+            <div class="comment-meta">
+              <span class="comment-name">${c.name}</span>
+              <button class="menu-btn" onclick="openMenu(event, '${c._id}', '${c.text}')"><i class='fa-solid fa-ellipsis-vertical'></i></button>
+            </div>
+            <p class="comment-text">${c.text}</p>
+          `;
+          commentsList.appendChild(div);
+        });
+      } catch (err) {
+        console.error("Comments load error:", err);
+        commentsList.innerHTML = `<p class="empty-msg">Failed to load comments.</p>`;
+      }
+    }
+
+    // ⋮ Menu (Edit/Delete)
+    function openMenu(event, id, text) {
+      event.stopPropagation();
+      document.querySelectorAll(".menu-popup").forEach(m => m.remove());
+
+      const btn = event.currentTarget;
+      const rect = btn.getBoundingClientRect();
+
+      const menu = document.createElement("div");
+      menu.className = "menu-popup";
+      menu.style.top = `${rect.bottom + 5}px`;
+      menu.style.left = `${rect.left - 60}px`;
+      menu.innerHTML = `
+        <button onclick="editComment('${id}', '${text.replace(/'/g, "\\'")}')">✏️ Edit</button>
+        <button onclick="deleteComment('${id}')">🗑️ Delete</button>
+      `;
+      document.body.appendChild(menu);
+
+      setTimeout(() => {
+        document.addEventListener("click", () => menu.remove(), { once: true });
+      }, 50);
+    }
+
+    // ✏️ Edit Comment
+    async function editComment(id, oldText) {
+      const newText = prompt("Edit comment:", oldText);
+      if (!newText || newText.trim() === oldText) return;
+      try {
+        const res = await fetch(`${COMMENTS_API}/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: newText }),
+        });
+        if (!res.ok) throw new Error("Failed to edit comment");
+        alert("✅ Comment updated!");
+        loadComments();
+      } catch (err) {
+        alert("❌ Edit failed!");
+        console.error(err);
+      }
+    }
+
+    // 🗑️ Delete Comment
+    async function deleteComment(id) {
+      if (!confirm("Delete this comment?")) return;
+      try {
+        const res = await fetch(`${COMMENTS_API}/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Failed");
+        alert("🗑️ Comment deleted!");
+        loadComments();
+      } catch (err) {
+        alert("❌ Delete failed.");
+        console.error(err);
+      }
+    }
+
+    loadBook();
+    loadComments();
+  </script>
+</body>
+</html>
