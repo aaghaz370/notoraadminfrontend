@@ -322,40 +322,59 @@ allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   </script>
 <script>
   const SESSION_KEY = "notoraAdminSession";
-  const expiry = sessionStorage.getItem(SESSION_KEY);
 
-  // Check if session exists and still valid
-  if (!expiry) {
-    alert("⚠️ Please login first!");
-    window.location.href = "login.html";
-  } else if (Date.now() > Number(expiry)) {
-    alert("⚠️ Session expired. Please login again.");
-    sessionStorage.removeItem(SESSION_KEY);
-    window.location.href = "login.html";
-  } else {
-    // Refresh expiry time on activity
+  function checkSession() {
+    const expiry = sessionStorage.getItem(SESSION_KEY);
+
+    if (!expiry) {
+      // Wait a bit before declaring expired (handles redirect timing)
+      setTimeout(() => {
+        if (!sessionStorage.getItem(SESSION_KEY)) {
+          alert("⚠️ Please login first!");
+          window.location.href = "login.html";
+        }
+      }, 700);
+      return;
+    }
+
+    if (Date.now() > Number(expiry)) {
+      alert("⚠️ Session expired. Please login again.");
+      sessionStorage.removeItem(SESSION_KEY);
+      window.location.href = "login.html";
+    } else {
+      // Extend session and setup inactivity logout
+      refreshSession();
+    }
+  }
+
+  function refreshSession() {
+    const newExpiry = Date.now() + 10 * 60 * 1000;
+    sessionStorage.setItem(SESSION_KEY, newExpiry.toString());
     let logoutTimer;
-    function resetLogoutTimer() {
+    function resetTimer() {
       clearTimeout(logoutTimer);
-      const newExpiry = Date.now() + 10 * 60 * 1000;
-      sessionStorage.setItem(SESSION_KEY, newExpiry.toString());
       logoutTimer = setTimeout(() => {
         sessionStorage.removeItem(SESSION_KEY);
         alert("⏱️ Session timed out! Please login again.");
         window.location.href = "login.html";
       }, 10 * 60 * 1000);
     }
-    window.onload = resetLogoutTimer;
-    window.onmousemove = resetLogoutTimer;
-    window.onkeydown = resetLogoutTimer;
+    window.onload = resetTimer;
+    window.onmousemove = resetTimer;
+    window.onkeydown = resetTimer;
   }
+
+  // Run check once page loads
+  document.addEventListener("DOMContentLoaded", checkSession);
 </script>
+
 
 
 
 
 </body>
 </html>
+
 
 
 
