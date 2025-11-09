@@ -320,8 +320,17 @@ allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
   </script>
+  <script>
+  const SESSION_KEY = "notoraAdminSession";
+  if (!sessionStorage.getItem(SESSION_KEY)) {
+    alert("⚠️ Please login first!");
+    window.location.href = "login.html";
+  }
+</script>
+
 </body>
 </html>
+
 
 
 
