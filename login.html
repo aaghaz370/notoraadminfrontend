@@ -72,24 +72,6 @@
 
   <script>
     const API_URL = "https://notoraadminbackend-1.onrender.com/api/admin/login";
-    const SESSION_KEY = "notoraAdminSession";
-    const LOCK_KEY = "notoraLockUntil";
-
-    // 🧹 Clear only on tab close (not refresh)
-    window.addEventListener("beforeunload", () => {
-      sessionStorage.removeItem(SESSION_KEY);
-    });
-
-    // 🚫 Lock check
-    window.addEventListener("load", () => {
-      const lockUntil = localStorage.getItem(LOCK_KEY);
-      if (lockUntil && Date.now() < Number(lockUntil)) {
-        const minutes = Math.ceil((Number(lockUntil) - Date.now()) / 60000);
-        disableLogin(`Locked for ${minutes} minute(s) due to failed attempts.`);
-      }
-    });
-
-    let failedAttempts = 0;
 
     async function login() {
       const password = document.getElementById("password").value.trim();
@@ -110,47 +92,24 @@
         const data = await res.json();
 
         if (res.ok && data.message === "ok") {
-          // ✅ Save session with 10-min expiry
-          const expiry = Date.now() + 10 * 60 * 1000;
-          sessionStorage.setItem(SESSION_KEY, expiry.toString());
-
+          // ✅ Store a persistent login (no expiry until logout)
+          localStorage.setItem("isAdmin", "true");
           errorMsg.style.color = "#00ff90";
           errorMsg.textContent = "✅ Login successful! Redirecting...";
-
-          // ✅ Wait for confirmation that it's stored
-          setTimeout(() => {
-            if (sessionStorage.getItem(SESSION_KEY)) {
-              window.location.replace("index.html");
-            } else {
-              errorMsg.textContent = "⚠️ Session setup delayed, retrying...";
-              setTimeout(() => window.location.replace("index.html"), 400);
-            }
-          }, 600);
+          setTimeout(() => window.location.href = "index.html", 800);
         } else {
-          failedAttempts++;
-          if (failedAttempts >= 3) {
-            const lockTime = Date.now() + 1 * 60 * 1000; // 1 minute lock
-            localStorage.setItem(LOCK_KEY, lockTime);
-            disableLogin("Too many failed attempts. Locked for 1 minute.");
-          } else {
-            errorMsg.textContent = `❌ Wrong password! (${3 - failedAttempts} tries left)`;
-          }
+          errorMsg.textContent = "❌ Wrong password!";
         }
       } catch (err) {
         console.error(err);
-        errorMsg.textContent = "⚠️ Server unreachable. Try again later.";
+        errorMsg.textContent = "⚠️ Server not reachable";
       }
-    }
-
-    function disableLogin(msg) {
-      document.getElementById("password").disabled = true;
-      document.getElementById("loginBtn").disabled = true;
-      document.getElementById("errorMsg").textContent = msg;
     }
 
     document.getElementById("loginBtn").addEventListener("click", login);
   </script>
 </body>
 </html>
+
 
 
