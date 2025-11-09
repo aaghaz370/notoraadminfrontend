@@ -74,114 +74,173 @@
   </table>
 
   <script>
-    // ------------------ CONFIG ------------------
-    const API = "https://notoraadminbackend-1.onrender.com/api/donations";
-    const msg = document.getElementById("msg");
+  // ------------------ CONFIG ------------------
+  const API = "https://notoraadminbackend-1.onrender.com/api/donations";
+  const msg = document.getElementById("msg");
+  const token = localStorage.getItem("adminToken"); // 🔑 Admin token from login
 
-    // ------------------ LOAD DONATIONS ------------------
-    async function loadDonations() {
-      msg.textContent = "Loading donations...";
-      try {
-        const res = await fetch(API);
-        const data = await res.json();
+  // 🔒 Token validation
+  if (!token) {
+    alert("⚠️ Please login first!");
+    window.location.href = "login.html";
+  }
 
-        const tbody = document.querySelector("#donationTable tbody");
-        tbody.innerHTML = "";
+  // ------------------ LOAD DONATIONS ------------------
+  async function loadDonations() {
+    msg.textContent = "Loading donations...";
+    try {
+      const res = await fetch(API, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        if (!data.length) {
-          msg.textContent = "No pending donations.";
-          return;
-        }
-        msg.textContent = "";
-
-        data.forEach(d => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${d.name}</td>
-            <td>${d.author}</td>
-            <td>${d.genre}</td>
-            <td>${d.rating || "N/A"}</td>
-            <td>${d.userEmail}</td>
-            <td>
-              <button class="verify" onclick="verifyBook('${d._id}')">Verify</button>
-              <button class="edit" onclick="editBook('${d._id}', '${d.name}')">Edit</button>
-              <button class="delete" onclick="deleteBook('${d._id}')">Delete</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        console.error(err);
-        msg.textContent = "❌ Failed to load donations.";
+      if (res.status === 401 || res.status === 403) {
+        alert("⚠️ Session expired. Please login again.");
+        localStorage.removeItem("adminToken");
+        window.location.href = "login.html";
+        return;
       }
-    }
 
-    // ------------------ VERIFY BOOK ------------------
-    async function verifyBook(id) {
-      if (!confirm("✅ Approve this book? The donor will earn +5NT.")) return;
-      try {
-        const res = await fetch(`${API}/${id}/verify`, { method: "POST" });
-        const data = await res.json();
+      const data = await res.json();
 
-        if (res.ok) {
-          alert("🎉 Book verified and moved to main library!");
-          loadDonations();
-        } else {
-          alert("❌ Error: " + (data.message || "Verification failed."));
-        }
-      } catch (err) {
-        console.error(err);
-        alert("❌ Error verifying book.");
+      const tbody = document.querySelector("#donationTable tbody");
+      tbody.innerHTML = "";
+
+      if (!data.length) {
+        msg.textContent = "No pending donations.";
+        return;
       }
+      msg.textContent = "";
+
+      data.forEach((d) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${d.name}</td>
+          <td>${d.author}</td>
+          <td>${d.genre}</td>
+          <td>${d.rating || "N/A"}</td>
+          <td>${d.email || d.userEmail || "Unknown"}</td>
+          <td>
+            <button class="verify" onclick="verifyBook('${d._id}')">Verify</button>
+            <button class="edit" onclick="editBook('${d._id}', '${d.name}')">Edit</button>
+            <button class="delete" onclick="deleteBook('${d._id}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error(err);
+      msg.textContent = "❌ Failed to load donations.";
     }
+  }
 
-    // ------------------ EDIT BOOK ------------------
-    async function editBook(id, currentName) {
-      const newName = prompt("Enter new book name:", currentName);
-      if (!newName || newName === currentName) return;
+  // ------------------ VERIFY BOOK ------------------
+  async function verifyBook(id) {
+    if (!confirm("✅ Approve this book? The donor will earn +5NT.")) return;
+    try {
+      const res = await fetch(`${API}/${id}/approve`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-      try {
-        const res = await fetch(`${API}/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: newName }),
-        });
-        const data = await res.json();
-
-        if (res.ok) {
-          alert("✅ Book details updated!");
-          loadDonations();
-        } else {
-          alert("❌ Update failed: " + (data.message || ""));
-        }
-      } catch (err) {
-        console.error(err);
-        alert("❌ Error updating book.");
+      if (res.status === 401 || res.status === 403) {
+        alert("⚠️ Session expired. Please login again.");
+        localStorage.removeItem("adminToken");
+        window.location.href = "login.html";
+        return;
       }
-    }
 
-    // ------------------ DELETE BOOK ------------------
-    async function deleteBook(id) {
-      if (!confirm("🗑️ Are you sure to delete this donation?")) return;
+      const data = await res.json();
 
-      try {
-        const res = await fetch(`${API}/${id}`, { method: "DELETE" });
-        const data = await res.json();
-
-        if (res.ok) {
-          alert("🗑️ Donation removed successfully!");
-          loadDonations();
-        } else {
-          alert("❌ Delete failed: " + (data.message || ""));
-        }
-      } catch (err) {
-        console.error(err);
-        alert("❌ Error deleting donation.");
+      if (res.ok) {
+        alert("🎉 Book verified and added to main library!");
+        loadDonations();
+      } else {
+        alert("❌ Error: " + (data.message || "Verification failed."));
       }
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error verifying book.");
     }
+  }
 
-    loadDonations();
-  </script>
+  // ------------------ EDIT BOOK ------------------
+  async function editBook(id, currentName) {
+    const newName = prompt("Enter new book name:", currentName);
+    if (!newName || newName === currentName) return;
+
+    try {
+      const res = await fetch(`${API}/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: newName }),
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        alert("⚠️ Session expired. Please login again.");
+        localStorage.removeItem("adminToken");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("✅ Book details updated!");
+        loadDonations();
+      } else {
+        alert("❌ Update failed: " + (data.message || ""));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error updating book.");
+    }
+  }
+
+  // ------------------ DELETE BOOK ------------------
+  async function deleteBook(id) {
+    if (!confirm("🗑️ Are you sure to delete this donation?")) return;
+
+    try {
+      const res = await fetch(`${API}/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        alert("⚠️ Session expired. Please login again.");
+        localStorage.removeItem("adminToken");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("🗑️ Donation removed successfully!");
+        loadDonations();
+      } else {
+        alert("❌ Delete failed: " + (data.message || ""));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("❌ Error deleting donation.");
+    }
+  }
+
+  // ------------------ INITIAL LOAD ------------------
+  loadDonations();
+</script>
+
 </body>
 </html>
 
