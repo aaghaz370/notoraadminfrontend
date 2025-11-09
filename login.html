@@ -6,40 +6,60 @@
   <title>Admin Login - Notora</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: white;
+      font-family: "Poppins", sans-serif;
+      background: radial-gradient(circle at top, #000 0%, #111 100%);
+      color: #fff;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      margin: 0;
     }
     .login-box {
-      background: #1e1e1e;
-      padding: 30px;
-      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      padding: 40px;
+      border-radius: 12px;
       text-align: center;
-      width: 300px;
-      box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
+      width: 320px;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+      backdrop-filter: blur(6px);
+    }
+    h2 {
+      color: #ff416c;
+      margin-bottom: 20px;
     }
     input, button {
       width: 100%;
       margin: 10px 0;
-      padding: 10px;
+      padding: 12px;
       border: none;
-      border-radius: 5px;
+      border-radius: 6px;
+      font-size: 1rem;
     }
     input {
       background: #222;
-      color: white;
+      color: #fff;
+      text-align: center;
+    }
+    input:focus {
+      outline: 1px solid #ff416c;
     }
     button {
-      background: crimson;
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
       color: white;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 600;
+      transition: 0.3s;
     }
-    button:hover { background: darkred; }
+    button:hover {
+      transform: scale(1.05);
+    }
+    .error {
+      color: #ff6363;
+      font-size: 0.9rem;
+      margin-top: 5px;
+      min-height: 20px;
+    }
   </style>
 </head>
 <body>
@@ -47,13 +67,28 @@
     <h2>🔐 Admin Login</h2>
     <input type="password" id="password" placeholder="Enter Admin Password" />
     <button onclick="login()">Login</button>
+    <div class="error" id="errorMsg"></div>
   </div>
 
   <script>
     const API_URL = "https://notoraadminbackend-1.onrender.com/api/admin/login";
+    const SESSION_KEY = "notoraAdminSession";
+
+    // 🔒 Always clear any old login data on page load
+    window.addEventListener("load", () => {
+      sessionStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(SESSION_KEY);
+    });
 
     async function login() {
       const password = document.getElementById("password").value.trim();
+      const errorMsg = document.getElementById("errorMsg");
+      errorMsg.textContent = "";
+
+      if (!password) {
+        errorMsg.textContent = "Please enter password.";
+        return;
+      }
 
       try {
         const res = await fetch(API_URL, {
@@ -65,16 +100,18 @@
         const data = await res.json();
 
         if (res.ok && data.message === "ok") {
-          localStorage.setItem("isAdmin", "true");
+          // ✅ Session stored in sessionStorage (auto clears on refresh/tab close)
+          sessionStorage.setItem(SESSION_KEY, "true");
           window.location.href = "index.html";
         } else {
-          alert("❌ Wrong password!");
+          errorMsg.textContent = "❌ Invalid admin password.";
         }
       } catch (err) {
         console.error(err);
-        alert("⚠️ Server not reachable");
+        errorMsg.textContent = "⚠️ Server unreachable. Try again later.";
       }
     }
   </script>
 </body>
 </html>
+
