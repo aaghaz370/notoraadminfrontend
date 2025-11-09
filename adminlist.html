@@ -1,0 +1,36 @@
+<h2>Admin Management</h2>
+<input type="email" id="adminEmail" placeholder="Enter Gmail..." />
+<button onclick="addAdmin()">Add Admin</button>
+
+<ul id="adminList"></ul>
+
+<script>
+const BACKEND_BASE = "https://notoraadminbackend-1.onrender.com";
+
+async function loadAdmins() {
+  const res = await fetch(`${BACKEND_BASE}/api/admins`);
+  const admins = await res.json();
+  const list = document.getElementById("adminList");
+  list.innerHTML = admins.map(a => `
+    <li>${a.email} <button onclick="removeAdmin('${a._id}')">❌</button></li>
+  `).join("");
+}
+
+async function addAdmin() {
+  const email = document.getElementById("adminEmail").value.trim();
+  if (!email) return alert("Enter a Gmail address");
+  await fetch(`${BACKEND_BASE}/api/admins`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  loadAdmins();
+}
+
+async function removeAdmin(id) {
+  await fetch(`${BACKEND_BASE}/api/admins/${id}`, { method: "DELETE" });
+  loadAdmins();
+}
+
+loadAdmins();
+</script>
