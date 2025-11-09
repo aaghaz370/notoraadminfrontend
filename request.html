@@ -74,18 +74,28 @@
   </table>
 
   <script>
-  // ------------------ CONFIG ------------------
+  // ---------------- CONFIG ----------------
   const API = "https://notoraadminbackend-1.onrender.com/api/donations";
   const msg = document.getElementById("msg");
-  const token = localStorage.getItem("adminToken"); // 🔑 Admin token from login
+  const token = localStorage.getItem("adminToken");
 
-  // 🔒 Token validation
+  // ⚡ Safe redirect helper
+  function forceLogout(msgText = "Session expired. Please login again.") {
+    console.warn(msgText);
+    localStorage.removeItem("adminToken");
+    setTimeout(() => {
+      alert("⚠️ " + msgText);
+      window.location.href = "login.html";
+    }, 100);
+  }
+
+  // ---------------- TOKEN VALIDATION ----------------
   if (!token) {
-    alert("⚠️ Please login first!");
+    // No token = first-time visitor
     window.location.href = "login.html";
   }
 
-  // ------------------ LOAD DONATIONS ------------------
+  // ---------------- LOAD DONATIONS ----------------
   async function loadDonations() {
     msg.textContent = "Loading donations...";
     try {
@@ -95,24 +105,21 @@
         },
       });
 
+      // Handle invalid/expired token gracefully
       if (res.status === 401 || res.status === 403) {
-        alert("⚠️ Session expired. Please login again.");
-        localStorage.removeItem("adminToken");
-        window.location.href = "login.html";
-        return;
+        return forceLogout();
       }
 
       const data = await res.json();
-
       const tbody = document.querySelector("#donationTable tbody");
       tbody.innerHTML = "";
 
-      if (!data.length) {
+      if (!Array.isArray(data) || !data.length) {
         msg.textContent = "No pending donations.";
         return;
       }
-      msg.textContent = "";
 
+      msg.textContent = "";
       data.forEach((d) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -130,12 +137,12 @@
         tbody.appendChild(tr);
       });
     } catch (err) {
-      console.error(err);
+      console.error("❌ Load error:", err);
       msg.textContent = "❌ Failed to load donations.";
     }
   }
 
-  // ------------------ VERIFY BOOK ------------------
+  // ---------------- VERIFY BOOK ----------------
   async function verifyBook(id) {
     if (!confirm("✅ Approve this book? The donor will earn +5NT.")) return;
     try {
@@ -147,13 +154,7 @@
         },
       });
 
-      if (res.status === 401 || res.status === 403) {
-        alert("⚠️ Session expired. Please login again.");
-        localStorage.removeItem("adminToken");
-        window.location.href = "login.html";
-        return;
-      }
-
+      if (res.status === 401 || res.status === 403) return forceLogout();
       const data = await res.json();
 
       if (res.ok) {
@@ -163,14 +164,14 @@
         alert("❌ Error: " + (data.message || "Verification failed."));
       }
     } catch (err) {
-      console.error(err);
+      console.error("Verify error:", err);
       alert("❌ Error verifying book.");
     }
   }
 
-  // ------------------ EDIT BOOK ------------------
+  // ---------------- EDIT BOOK ----------------
   async function editBook(id, currentName) {
-    const newName = prompt("Enter new book name:", currentName);
+    const newName = prompt("✏️ Enter new book name:", currentName);
     if (!newName || newName === currentName) return;
 
     try {
@@ -183,13 +184,7 @@
         body: JSON.stringify({ name: newName }),
       });
 
-      if (res.status === 401 || res.status === 403) {
-        alert("⚠️ Session expired. Please login again.");
-        localStorage.removeItem("adminToken");
-        window.location.href = "login.html";
-        return;
-      }
-
+      if (res.status === 401 || res.status === 403) return forceLogout();
       const data = await res.json();
 
       if (res.ok) {
@@ -199,12 +194,12 @@
         alert("❌ Update failed: " + (data.message || ""));
       }
     } catch (err) {
-      console.error(err);
+      console.error("Edit error:", err);
       alert("❌ Error updating book.");
     }
   }
 
-  // ------------------ DELETE BOOK ------------------
+  // ---------------- DELETE BOOK ----------------
   async function deleteBook(id) {
     if (!confirm("🗑️ Are you sure to delete this donation?")) return;
 
@@ -216,13 +211,7 @@
         },
       });
 
-      if (res.status === 401 || res.status === 403) {
-        alert("⚠️ Session expired. Please login again.");
-        localStorage.removeItem("adminToken");
-        window.location.href = "login.html";
-        return;
-      }
-
+      if (res.status === 401 || res.status === 403) return forceLogout();
       const data = await res.json();
 
       if (res.ok) {
@@ -232,15 +221,15 @@
         alert("❌ Delete failed: " + (data.message || ""));
       }
     } catch (err) {
-      console.error(err);
+      console.error("Delete error:", err);
       alert("❌ Error deleting donation.");
     }
   }
 
-  // ------------------ INITIAL LOAD ------------------
+  // ---------------- INITIAL LOAD ----------------
   loadDonations();
-</script>
-
+  </script>
 </body>
 </html>
+
 
