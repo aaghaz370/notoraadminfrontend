@@ -75,12 +75,12 @@
     const SESSION_KEY = "notoraAdminSession";
     const LOCK_KEY = "notoraLockUntil";
 
-    // 🧹 Clear old session when tab is closed (not on same tab refresh)
+    // Remove session on tab close
     window.addEventListener("beforeunload", () => {
       sessionStorage.removeItem(SESSION_KEY);
     });
 
-    // 🚫 If already locked, prevent login
+    // Lock check
     window.addEventListener("load", () => {
       const lockUntil = localStorage.getItem(LOCK_KEY);
       if (lockUntil && Date.now() < Number(lockUntil)) {
@@ -111,12 +111,17 @@
         const data = await res.json();
 
         if (res.ok && data.message === "ok") {
-          // ✅ Store a valid session (10 mins)
-          const expiry = Date.now() + 10 * 60 * 1000;
+          // ✅ Wait a bit to ensure session writes completely
+          const expiry = Date.now() + 10 * 60 * 1000; // valid for 10 minutes
           sessionStorage.setItem(SESSION_KEY, expiry.toString());
-          failedAttempts = 0;
-          localStorage.removeItem(LOCK_KEY);
-          window.location.href = "index.html";
+
+          errorMsg.style.color = "#00ff90";
+          errorMsg.textContent = "✅ Login successful! Redirecting...";
+
+          // small delay so sessionStorage is saved before redirect
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 500);
         } else {
           failedAttempts++;
           if (failedAttempts >= 3) {
@@ -137,7 +142,6 @@
       const input = document.getElementById("password");
       const button = document.getElementById("loginBtn");
       const errorMsg = document.getElementById("errorMsg");
-
       input.disabled = true;
       button.disabled = true;
       errorMsg.textContent = msg;
@@ -148,4 +152,5 @@
   </script>
 </body>
 </html>
+
 
