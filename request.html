@@ -79,19 +79,8 @@
   const msg = document.getElementById("msg");
   const token = localStorage.getItem("adminToken");
 
-  // ⚡ Safe redirect helper
-  function forceLogout(msgText = "Session expired. Please login again.") {
-    console.warn(msgText);
-    localStorage.removeItem("adminToken");
-    setTimeout(() => {
-      alert("⚠️ " + msgText);
-      window.location.href = "login.html";
-    }, 100);
-  }
-
-  // ---------------- TOKEN VALIDATION ----------------
+  // 🧠 If not logged in → redirect only once
   if (!token) {
-    // No token = first-time visitor
     window.location.href = "login.html";
   }
 
@@ -100,15 +89,8 @@
     msg.textContent = "Loading donations...";
     try {
       const res = await fetch(API, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      // Handle invalid/expired token gracefully
-      if (res.status === 401 || res.status === 403) {
-        return forceLogout();
-      }
 
       const data = await res.json();
       const tbody = document.querySelector("#donationTable tbody");
@@ -154,9 +136,7 @@
         },
       });
 
-      if (res.status === 401 || res.status === 403) return forceLogout();
       const data = await res.json();
-
       if (res.ok) {
         alert("🎉 Book verified and added to main library!");
         loadDonations();
@@ -184,9 +164,7 @@
         body: JSON.stringify({ name: newName }),
       });
 
-      if (res.status === 401 || res.status === 403) return forceLogout();
       const data = await res.json();
-
       if (res.ok) {
         alert("✅ Book details updated!");
         loadDonations();
@@ -206,14 +184,10 @@
     try {
       const res = await fetch(`${API}/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (res.status === 401 || res.status === 403) return forceLogout();
       const data = await res.json();
-
       if (res.ok) {
         alert("🗑️ Donation removed successfully!");
         loadDonations();
@@ -228,7 +202,8 @@
 
   // ---------------- INITIAL LOAD ----------------
   loadDonations();
-  </script>
+</script>
+
 </body>
 </html>
 
