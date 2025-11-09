@@ -320,35 +320,12 @@ allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
   </script>
- <script>
-  const SESSION_KEY = "notoraAdminSession";
-
-  // 🚷 If no session, redirect immediately
-  if (!sessionStorage.getItem(SESSION_KEY)) {
-    alert("⚠️ Please login again!");
-    window.location.href = "login.html";
-  }
-
-  // 🕒 Auto logout after 10 mins of inactivity
-  let logoutTimer;
-  function resetLogoutTimer() {
-    clearTimeout(logoutTimer);
-    logoutTimer = setTimeout(() => {
-      sessionStorage.removeItem(SESSION_KEY);
-      alert("⏱️ Session expired! Please login again.");
-      window.location.href = "login.html";
-    }, 10 * 60 * 1000); // 10 minutes
-  }
-
-  // Reset timer on any activity
-  window.onload = resetLogoutTimer;
-  window.onmousemove = resetLogoutTimer;
-  window.onkeydown = resetLogoutTimer;
-</script>
+ 
 
 
 </body>
 </html>
+
 
 
 
