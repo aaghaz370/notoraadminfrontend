@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pending Donations | Admin Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #0e0e0e;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #ff416c;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background: rgba(255,65,108,0.1);
+    }
+    tr:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    button {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: white;
+      font-weight: 600;
+    }
+    .verify {
+      background: #28a745;
+    }
+    .edit {
+      background: #ffbb33;
+    }
+    .delete {
+      background: #e50914;
+    }
+    .msg {
+      text-align: center;
+      margin-top: 10px;
+      color: #ffbb33;
+    }
+  </style>
+</head>
+<body>
+  <h1>📚 Pending Book Donations</h1>
+  <div class="msg" id="msg">Loading...</div>
+
+  <table id="donationTable">
+    <thead>
+      <tr>
+        <th>Book</th>
+        <th>Author</th>
+        <th>Genre</th>
+        <th>Rating</th>
+        <th>Donor Email</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const API = "https://notoraadminbackend-1.onrender.com/api/donations";
+    const token = localStorage.getItem("notoraToken");
+    const user = JSON.parse(localStorage.getItem("notoraUser") || "null");
+    const msg = document.getElementById("msg");
+
+    if (!user || !token || !user.isAdmin) {
+      alert("Access denied. Admins only!");
+      location.href = "/profile.html";
+    }
+
+    async function loadDonations() {
+      msg.textContent = "Loading donations...";
+      try {
+        const res = await fetch(API, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+
+        const tbody = document.querySelector("#donationTable tbody");
+        tbody.innerHTML = "";
+
+        if (!data.length) {
+          msg.textContent = "No pending donations.";
+          return;
+        }
+        msg.textContent = "";
+
+        data.forEach(d => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${d.name}</td>
+            <td>${d.author}</td>
+            <td>${d.genre}</td>
+            <td>${d.rating}</td>
+            <td>${d.userEmail}</td>
+            <td>
+              <button class="verify" onclick="verifyBook('${d._id}')">Verify</button>
+              <button class="edit" onclick="editBook('${d._id}')">Edit</button>
+              <button class="delete" onclick="deleteBook('${d._id}')">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error(err);
+        msg.textContent = "❌ Failed to load donations.";
+      }
+    }
+
+    async function verifyBook(id) {
+      if (!confirm("Approve this book and reward user 5NT?")) return;
+      try {
+        const res = await fetch(`${API}/${id}/verify`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          alert("✅ Book verified & added!");
+          loadDonations();
+        } else {
+          const d = await res.json();
+          alert(d.message || "Error verifying.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("❌ Error verifying book.");
+      }
+    }
+
+    async function editBook(id) {
+      const newName = prompt("Enter new book name:");
+      if (!newName) return;
+      try {
+        const res = await fetch(`${API}/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name: newName }),
+        });
+        if (res.ok) {
+          alert("✅ Book details updated!");
+          loadDonations();
+        } else {
+          alert("❌ Update failed.");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function deleteBook(id) {
+      if (!confirm("Are you sure to delete this donation?")) return;
+      try {
+        const res = await fetch(`${API}/${id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          alert("🗑️ Deleted successfully!");
+          loadDonations();
+        } else {
+          alert("❌ Delete failed.");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadDonations();
+  </script>
+</body>
+</html>
