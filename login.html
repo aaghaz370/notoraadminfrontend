@@ -75,12 +75,12 @@
     const SESSION_KEY = "notoraAdminSession";
     const LOCK_KEY = "notoraLockUntil";
 
-    // Remove session on tab close
+    // 🧹 Clear only on tab close (not refresh)
     window.addEventListener("beforeunload", () => {
       sessionStorage.removeItem(SESSION_KEY);
     });
 
-    // Lock check
+    // 🚫 Lock check
     window.addEventListener("load", () => {
       const lockUntil = localStorage.getItem(LOCK_KEY);
       if (lockUntil && Date.now() < Number(lockUntil)) {
@@ -94,7 +94,6 @@
     async function login() {
       const password = document.getElementById("password").value.trim();
       const errorMsg = document.getElementById("errorMsg");
-      const loginBtn = document.getElementById("loginBtn");
 
       if (!password) {
         errorMsg.textContent = "Please enter password.";
@@ -111,17 +110,22 @@
         const data = await res.json();
 
         if (res.ok && data.message === "ok") {
-          // ✅ Wait a bit to ensure session writes completely
-          const expiry = Date.now() + 10 * 60 * 1000; // valid for 10 minutes
+          // ✅ Save session with 10-min expiry
+          const expiry = Date.now() + 10 * 60 * 1000;
           sessionStorage.setItem(SESSION_KEY, expiry.toString());
 
           errorMsg.style.color = "#00ff90";
           errorMsg.textContent = "✅ Login successful! Redirecting...";
 
-          // small delay so sessionStorage is saved before redirect
+          // ✅ Wait for confirmation that it's stored
           setTimeout(() => {
-            window.location.href = "index.html";
-          }, 500);
+            if (sessionStorage.getItem(SESSION_KEY)) {
+              window.location.replace("index.html");
+            } else {
+              errorMsg.textContent = "⚠️ Session setup delayed, retrying...";
+              setTimeout(() => window.location.replace("index.html"), 400);
+            }
+          }, 600);
         } else {
           failedAttempts++;
           if (failedAttempts >= 3) {
@@ -139,13 +143,9 @@
     }
 
     function disableLogin(msg) {
-      const input = document.getElementById("password");
-      const button = document.getElementById("loginBtn");
-      const errorMsg = document.getElementById("errorMsg");
-      input.disabled = true;
-      button.disabled = true;
-      errorMsg.textContent = msg;
-      button.style.background = "#555";
+      document.getElementById("password").disabled = true;
+      document.getElementById("loginBtn").disabled = true;
+      document.getElementById("errorMsg").textContent = msg;
     }
 
     document.getElementById("loginBtn").addEventListener("click", login);
