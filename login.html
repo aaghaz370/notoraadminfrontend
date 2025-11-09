@@ -75,15 +75,17 @@
     const SESSION_KEY = "notoraAdminSession";
     const LOCK_KEY = "notoraLockUntil";
 
-    // 🧹 Clear session every load (force fresh login)
-    sessionStorage.clear();
+    // 🧹 Clear old session when tab is closed (not on same tab refresh)
+    window.addEventListener("beforeunload", () => {
+      sessionStorage.removeItem(SESSION_KEY);
+    });
 
-    // 🔒 If locked, prevent login
+    // 🚫 If already locked, prevent login
     window.addEventListener("load", () => {
       const lockUntil = localStorage.getItem(LOCK_KEY);
       if (lockUntil && Date.now() < Number(lockUntil)) {
         const minutes = Math.ceil((Number(lockUntil) - Date.now()) / 60000);
-        disableLogin(`Locked for ${minutes} min(s) due to multiple failed attempts.`);
+        disableLogin(`Locked for ${minutes} minute(s) due to failed attempts.`);
       }
     });
 
@@ -109,8 +111,9 @@
         const data = await res.json();
 
         if (res.ok && data.message === "ok") {
-          // ✅ Success
-          sessionStorage.setItem(SESSION_KEY, "true");
+          // ✅ Store a valid session (10 mins)
+          const expiry = Date.now() + 10 * 60 * 1000;
+          sessionStorage.setItem(SESSION_KEY, expiry.toString());
           failedAttempts = 0;
           localStorage.removeItem(LOCK_KEY);
           window.location.href = "index.html";
