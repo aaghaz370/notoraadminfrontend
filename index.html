@@ -320,37 +320,43 @@ allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
   </script>
- <script>
+<script>
   const SESSION_KEY = "notoraAdminSession";
   const expiry = sessionStorage.getItem(SESSION_KEY);
 
-  // ❌ No session or expired → redirect to login
-  if (!expiry || Date.now() > Number(expiry)) {
+  // Check if session exists and still valid
+  if (!expiry) {
+    alert("⚠️ Please login first!");
+    window.location.href = "login.html";
+  } else if (Date.now() > Number(expiry)) {
     alert("⚠️ Session expired. Please login again.");
     sessionStorage.removeItem(SESSION_KEY);
     window.location.href = "login.html";
+  } else {
+    // Refresh expiry time on activity
+    let logoutTimer;
+    function resetLogoutTimer() {
+      clearTimeout(logoutTimer);
+      const newExpiry = Date.now() + 10 * 60 * 1000;
+      sessionStorage.setItem(SESSION_KEY, newExpiry.toString());
+      logoutTimer = setTimeout(() => {
+        sessionStorage.removeItem(SESSION_KEY);
+        alert("⏱️ Session timed out! Please login again.");
+        window.location.href = "login.html";
+      }, 10 * 60 * 1000);
+    }
+    window.onload = resetLogoutTimer;
+    window.onmousemove = resetLogoutTimer;
+    window.onkeydown = resetLogoutTimer;
   }
-
-  // 🕒 Auto logout after 10 minutes of inactivity
-  let logoutTimer;
-  function resetLogoutTimer() {
-    clearTimeout(logoutTimer);
-    logoutTimer = setTimeout(() => {
-      sessionStorage.removeItem(SESSION_KEY);
-      alert("⏱️ Session timed out! Please login again.");
-      window.location.href = "login.html";
-    }, 10 * 60 * 1000); // 10 minutes
-  }
-
-  window.onload = resetLogoutTimer;
-  window.onmousemove = resetLogoutTimer;
-  window.onkeydown = resetLogoutTimer;
 </script>
+
 
 
 
 </body>
 </html>
+
 
 
 
