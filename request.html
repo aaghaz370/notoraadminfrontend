@@ -28,7 +28,7 @@
       text-align: left;
     }
     th {
-      background: rgba(255,65,108,0.1);
+      background: rgba(255,65,108,0.15);
     }
     tr:hover {
       background: rgba(255,255,255,0.05);
@@ -40,16 +40,14 @@
       cursor: pointer;
       color: white;
       font-weight: 600;
+      transition: 0.2s;
     }
-    .verify {
-      background: #28a745;
-    }
-    .edit {
-      background: #ffbb33;
-    }
-    .delete {
-      background: #e50914;
-    }
+    .verify { background: #28a745; }
+    .verify:hover { background: #23913d; }
+    .edit { background: #ffbb33; color: #222; }
+    .edit:hover { background: #ffaa00; }
+    .delete { background: #e50914; }
+    .delete:hover { background: #c40812; }
     .msg {
       text-align: center;
       margin-top: 10px;
@@ -76,20 +74,15 @@
   </table>
 
   <script>
+    // ------------------ CONFIG ------------------
     const API = "https://notoraadminbackend-1.onrender.com/api/donations";
-    const token = localStorage.getItem("notoraToken");
-    const user = JSON.parse(localStorage.getItem("notoraUser") || "null");
     const msg = document.getElementById("msg");
 
-    if (!user || !token || !user.isAdmin) {
-      alert("Access denied. Admins only!");
-      location.href = "/profile.html";
-    }
-
+    // ------------------ LOAD DONATIONS ------------------
     async function loadDonations() {
       msg.textContent = "Loading donations...";
       try {
-        const res = await fetch(API, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(API);
         const data = await res.json();
 
         const tbody = document.querySelector("#donationTable tbody");
@@ -107,11 +100,11 @@
             <td>${d.name}</td>
             <td>${d.author}</td>
             <td>${d.genre}</td>
-            <td>${d.rating}</td>
+            <td>${d.rating || "N/A"}</td>
             <td>${d.userEmail}</td>
             <td>
               <button class="verify" onclick="verifyBook('${d._id}')">Verify</button>
-              <button class="edit" onclick="editBook('${d._id}')">Edit</button>
+              <button class="edit" onclick="editBook('${d._id}', '${d.name}')">Edit</button>
               <button class="delete" onclick="deleteBook('${d._id}')">Delete</button>
             </td>
           `;
@@ -123,19 +116,18 @@
       }
     }
 
+    // ------------------ VERIFY BOOK ------------------
     async function verifyBook(id) {
-      if (!confirm("Approve this book and reward user 5NT?")) return;
+      if (!confirm("✅ Approve this book? The donor will earn +5NT.")) return;
       try {
-        const res = await fetch(`${API}/${id}/verify`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${API}/${id}/verify`, { method: "POST" });
+        const data = await res.json();
+
         if (res.ok) {
-          alert("✅ Book verified & added!");
+          alert("🎉 Book verified and moved to main library!");
           loadDonations();
         } else {
-          const d = await res.json();
-          alert(d.message || "Error verifying.");
+          alert("❌ Error: " + (data.message || "Verification failed."));
         }
       } catch (err) {
         console.error(err);
@@ -143,44 +135,48 @@
       }
     }
 
-    async function editBook(id) {
-      const newName = prompt("Enter new book name:");
-      if (!newName) return;
+    // ------------------ EDIT BOOK ------------------
+    async function editBook(id, currentName) {
+      const newName = prompt("Enter new book name:", currentName);
+      if (!newName || newName === currentName) return;
+
       try {
         const res = await fetch(`${API}/${id}`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: newName }),
         });
+        const data = await res.json();
+
         if (res.ok) {
           alert("✅ Book details updated!");
           loadDonations();
         } else {
-          alert("❌ Update failed.");
+          alert("❌ Update failed: " + (data.message || ""));
         }
       } catch (err) {
         console.error(err);
+        alert("❌ Error updating book.");
       }
     }
 
+    // ------------------ DELETE BOOK ------------------
     async function deleteBook(id) {
-      if (!confirm("Are you sure to delete this donation?")) return;
+      if (!confirm("🗑️ Are you sure to delete this donation?")) return;
+
       try {
-        const res = await fetch(`${API}/${id}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${API}/${id}`, { method: "DELETE" });
+        const data = await res.json();
+
         if (res.ok) {
-          alert("🗑️ Deleted successfully!");
+          alert("🗑️ Donation removed successfully!");
           loadDonations();
         } else {
-          alert("❌ Delete failed.");
+          alert("❌ Delete failed: " + (data.message || ""));
         }
       } catch (err) {
         console.error(err);
+        alert("❌ Error deleting donation.");
       }
     }
 
@@ -188,3 +184,4 @@
   </script>
 </body>
 </html>
+
