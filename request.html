@@ -150,57 +150,59 @@
   }
 
   // ------------------ EDIT BOOK (All Fields) ------------------
-async function editBook(id, currentName) {
+async function editBook(id) {
   try {
-    // Fetch current details first
-    const res = await fetch(`${API}/${id}`);
+    // ✅ Fetch full donation details with token
+    const res = await fetch(`${API}/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      alert("⚠️ Unauthorized or expired session. Please re-login.");
+      localStorage.removeItem("adminToken");
+      window.location.href = "login.html";
+      return;
+    }
+
     const donation = await res.json();
 
-    if (!res.ok || !donation) {
-      return alert("❌ Could not fetch book details.");
+    // 🧠 Fill all editable fields
+    const name = prompt("Book Name:", donation.name || "");
+    const author = prompt("Author:", donation.author || "");
+    const genre = prompt("Genre:", donation.genre || "");
+    const rating = prompt("Rating (1–5):", donation.rating || "");
+    const thumbnail = prompt("Thumbnail URL:", donation.thumbnail || "");
+    const pdfUrl = prompt("PDF URL:", donation.pdfUrl || "");
+
+    if (!name || !author || !genre || !pdfUrl) {
+      alert("All fields are required!");
+      return;
     }
 
-    // Prompt user for each field
-    const newName = prompt("📖 Book Name:", donation.name || "");
-    const newAuthor = prompt("✍️ Author:", donation.author || "");
-    const newGenre = prompt("🎭 Genre:", donation.genre || "");
-    const newRating = prompt("⭐ Rating (0-5):", donation.rating || "0");
-    const newPdf = prompt("📚 PDF URL:", donation.pdfUrl || "");
-    const newThumb = prompt("🖼️ Thumbnail URL:", donation.thumbnail || "");
-
-    if (!newName || !newAuthor || !newGenre || !newPdf || !newThumb) {
-      return alert("⚠️ All fields are required!");
-    }
-
-    // Update in DB
+    // ✅ Send update request
     const updateRes = await fetch(`${API}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({
-        name: newName,
-        author: newAuthor,
-        genre: newGenre,
-        rating: newRating,
-        pdfUrl: newPdf,
-        thumbnail: newThumb,
-      }),
+      body: JSON.stringify({ name, author, genre, rating, thumbnail, pdfUrl })
     });
 
     const data = await updateRes.json();
+
     if (updateRes.ok) {
-      alert("✅ Book details updated successfully!");
+      alert("✅ Donation updated successfully!");
       loadDonations();
     } else {
-      alert("❌ Failed to update: " + (data.message || ""));
+      alert("❌ Update failed: " + (data.message || ""));
     }
   } catch (err) {
     console.error("Edit error:", err);
-    alert("❌ Something went wrong while editing.");
+    alert("❌ Error editing donation.");
   }
 }
+
 
 
   // ---------------- DELETE BOOK ----------------
