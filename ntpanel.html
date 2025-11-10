@@ -7,42 +7,87 @@
     body { background:#0f0f0f; color:#fff; font-family:Poppins,sans-serif; padding:20px; }
     h1 { color:#ff416c; text-align:center; }
     table { width:100%; border-collapse:collapse; margin-top:20px; }
-    th,td { padding:10px; border:1px solid rgba(255,255,255,0.2); }
-    input,button { padding:8px; border-radius:5px; border:none; }
-    button { background:#ff416c; color:#fff; cursor:pointer; }
+    th,td { padding:10px; border:1px solid rgba(255,255,255,0.2); text-align:left; }
+    input,button { padding:8px; border-radius:5px; border:none; margin:5px; }
+    button { background:#ff416c; color:#fff; cursor:pointer; transition:0.2s; }
+    button:hover { background:#ff5c7a; }
+    #msg { margin-top:10px; color:#00ff90; font-weight:600; }
   </style>
 </head>
 <body>
   <h1>NT Points Manager</h1>
+
   <div>
     <input type="email" id="email" placeholder="User Email" />
     <input type="number" id="points" placeholder="Add Points" />
     <button onclick="addPoints()">Add NT</button>
   </div>
+
   <div id="msg"></div>
-  <table id="table"><thead><tr><th>Name</th><th>Email</th><th>Points</th></tr></thead><tbody></tbody></table>
+
+  <table id="table">
+    <thead>
+      <tr><th>Name</th><th>Email</th><th>Points</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
   <script>
-    const API = "https://notoraadminbackend-1.onrender.com/api/admin";
+    const API_BASE = "https://notoraadminbackend-1.onrender.com/api/admin";
     const token = localStorage.getItem("adminToken");
+    const msg = document.getElementById("msg");
 
-    async function loadUsers() {
-      const res = await fetch(`${API}/ntpoints`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      const tbody = document.querySelector("#table tbody");
-      tbody.innerHTML = data.map(u =>
-        `<tr><td>${u.name}</td><td>${u.email}</td><td>${u.achievements?.points || 0}</td></tr>`
-      ).join("");
+    // ✅ universal fetch wrapper for error handling
+    async function safeFetch(url, options = {}) {
+      try {
+        const res = await fetch(url, options);
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`HTTP ${res.status}: ${text}`);
+        }
+        return await res.json();
+      } catch (err) {
+        console.error("❌ Fetch Error:", err);
+        msg.style.color = "#ff4c4c";
+        msg.textContent = "⚠️ Server not reachable or route missing.";
+        return null;
+      }
     }
 
+    // ✅ load all users and display in table
+    async function loadUsers() {
+      msg.textContent = "Loading users...";
+      const data = await safeFetch(`${API_BASE}/ntpoints`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!data) return;
+
+      const tbody = document.querySelector("#table tbody");
+      tbody.innerHTML = data.map(u =>
+        `<tr>
+          <td>${u.name || "—"}</td>
+          <td>${u.email || "—"}</td>
+          <td>${u.achievements?.points ?? 0}</td>
+        </tr>`
+      ).join("");
+      msg.textContent = "";
+    }
+
+    // ✅ add NT points to specific email
     async function addPoints() {
       const email = document.getElementById("email").value.trim();
       const points = document.getElementById("points").value.trim();
-      const msg = document.getElementById("msg");
 
-      if (!email || !points) return msg.textContent = "Fill both fields";
+      if (!email || !points) {
+        msg.style.color = "#ffbb33";
+        msg.textContent = "⚠️ Please fill both fields.";
+        return;
+      }
 
-      const res = await fetch(`${API}/ntpoints/add`, {
+      msg.style.color = "#9ae8ff";
+      msg.textContent = "Processing...";
+
+      const data = await safeFetch(`${API_BASE}/ntpoints/add`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -51,9 +96,11 @@
         body: JSON.stringify({ email, points }),
       });
 
-      const data = await res.json();
-      msg.textContent = data.message;
-      loadUsers();
+      if (data) {
+        msg.style.color = "#00ff90";
+        msg.textContent = data.message || `✅ ${points} NT added to ${email}`;
+        await loadUsers();
+      }
     }
 
     loadUsers();
