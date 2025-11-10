@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pending Donations | Admin Panel</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -27,7 +26,6 @@
       border: 1px solid rgba(255,255,255,0.2);
       padding: 10px;
       text-align: left;
-      vertical-align: middle;
     }
     th {
       background: rgba(255,65,108,0.15);
@@ -55,46 +53,6 @@
       margin-top: 10px;
       color: #ffbb33;
     }
-
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 999;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-content {
-      background: #1a1a1a;
-      padding: 20px;
-      border-radius: 10px;
-      width: 400px;
-    }
-    .modal-content h2 {
-      text-align: center;
-      color: #ff416c;
-      margin-bottom: 10px;
-    }
-    .modal-content input {
-      width: 100%;
-      padding: 8px;
-      margin: 6px 0;
-      border: 1px solid #444;
-      border-radius: 5px;
-      background: #0e0e0e;
-      color: #fff;
-    }
-    .modal-content button {
-      width: 48%;
-      margin-top: 10px;
-    }
-    .btn-row {
-      display: flex;
-      justify-content: space-between;
-    }
   </style>
 </head>
 <body>
@@ -108,46 +66,32 @@
         <th>Author</th>
         <th>Genre</th>
         <th>Rating</th>
-        <th>Thumbnail</th>
-        <th>PDF URL</th>
-        <th>Email</th>
-        <th>Date</th>
+        <th>Donor Email</th>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
-  <!-- Edit Modal -->
-  <div class="modal" id="editModal">
-    <div class="modal-content">
-      <h2>Edit Donation</h2>
-      <input type="text" id="editName" placeholder="Book Name" />
-      <input type="text" id="editAuthor" placeholder="Author" />
-      <input type="text" id="editGenre" placeholder="Genre" />
-      <input type="number" id="editRating" placeholder="Rating (1-5)" />
-      <input type="text" id="editThumbnail" placeholder="Thumbnail URL" />
-      <input type="text" id="editPdfUrl" placeholder="PDF URL" />
-      <div class="btn-row">
-        <button class="verify" onclick="saveEdit()">Save</button>
-        <button class="delete" onclick="closeModal()">Cancel</button>
-      </div>
-    </div>
-  </div>
-
   <script>
+  // ---------------- CONFIG ----------------
   const API = "https://notoraadminbackend-1.onrender.com/api/donations";
   const msg = document.getElementById("msg");
   const token = localStorage.getItem("adminToken");
 
-  if (!token) window.location.href = "login.html";
+  // 🧠 If not logged in → redirect only once
+  if (!token) {
+    window.location.href = "login.html";
+  }
 
-  let currentId = null;
-
+  // ---------------- LOAD DONATIONS ----------------
   async function loadDonations() {
     msg.textContent = "Loading donations...";
     try {
-      const res = await fetch(API, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(API, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       const data = await res.json();
       const tbody = document.querySelector("#donationTable tbody");
       tbody.innerHTML = "";
@@ -158,20 +102,17 @@
       }
 
       msg.textContent = "";
-      data.forEach(d => {
+      data.forEach((d) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${d.name}</td>
           <td>${d.author}</td>
           <td>${d.genre}</td>
           <td>${d.rating || "N/A"}</td>
-          <td><a href="${d.thumbnail}" target="_blank">View</a></td>
-          <td><a href="${d.pdfUrl}" target="_blank">Open</a></td>
           <td>${d.email || d.userEmail || "Unknown"}</td>
-          <td>${new Date(d.createdAt).toLocaleString()}</td>
           <td>
             <button class="verify" onclick="verifyBook('${d._id}')">Verify</button>
-            <button class="edit" onclick="openEditModal('${d._id}')">Edit</button>
+            <button class="edit" onclick="editBook('${d._id}', '${d.name}')">Edit</button>
             <button class="delete" onclick="deleteBook('${d._id}')">Delete</button>
           </td>
         `;
@@ -183,96 +124,89 @@
     }
   }
 
+  // ---------------- VERIFY BOOK ----------------
   async function verifyBook(id) {
     if (!confirm("✅ Approve this book? The donor will earn +5NT.")) return;
     try {
       const res = await fetch(`${API}/${id}/approve`, {
         method: "PUT",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
+
       const data = await res.json();
       if (res.ok) {
-        alert("🎉 Book verified and added to library!");
+        alert("🎉 Book verified and added to main library!");
         loadDonations();
-      } else alert("❌ " + (data.message || "Verification failed."));
+      } else {
+        alert("❌ Error: " + (data.message || "Verification failed."));
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Verify error:", err);
       alert("❌ Error verifying book.");
     }
   }
 
-  async function openEditModal(id) {
-    currentId = id;
-    const res = await fetch(`${API}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-    const d = await res.json();
-
-    document.getElementById("editName").value = d.name || "";
-    document.getElementById("editAuthor").value = d.author || "";
-    document.getElementById("editGenre").value = d.genre || "";
-    document.getElementById("editRating").value = d.rating || "";
-    document.getElementById("editThumbnail").value = d.thumbnail || "";
-    document.getElementById("editPdfUrl").value = d.pdfUrl || "";
-    document.getElementById("editModal").style.display = "flex";
-  }
-
-  function closeModal() {
-    document.getElementById("editModal").style.display = "none";
-  }
-
-  async function saveEdit() {
-    const name = document.getElementById("editName").value.trim();
-    const author = document.getElementById("editAuthor").value.trim();
-    const genre = document.getElementById("editGenre").value.trim();
-    const rating = document.getElementById("editRating").value.trim();
-    const thumbnail = document.getElementById("editThumbnail").value.trim();
-    const pdfUrl = document.getElementById("editPdfUrl").value.trim();
-
-    if (!name || !author || !genre || !pdfUrl) {
-      alert("All fields required!");
-      return;
-    }
+  // ---------------- EDIT BOOK ----------------
+  async function editBook(id, currentName) {
+    const newName = prompt("✏️ Enter new book name:", currentName);
+    if (!newName || newName === currentName) return;
 
     try {
-      const res = await fetch(`${API}/${currentId}`, {
+      const res = await fetch(`${API}/${id}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, author, genre, rating, thumbnail, pdfUrl }),
+        body: JSON.stringify({ name: newName }),
       });
+
       const data = await res.json();
       if (res.ok) {
-        alert("✅ Updated successfully!");
-        closeModal();
+        alert("✅ Book details updated!");
         loadDonations();
-      } else alert("❌ Update failed: " + (data.message || ""));
+      } else {
+        alert("❌ Update failed: " + (data.message || ""));
+      }
     } catch (err) {
       console.error("Edit error:", err);
+      alert("❌ Error updating book.");
     }
   }
 
+  // ---------------- DELETE BOOK ----------------
   async function deleteBook(id) {
     if (!confirm("🗑️ Are you sure to delete this donation?")) return;
+
     try {
       const res = await fetch(`${API}/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+
       const data = await res.json();
       if (res.ok) {
-        alert("🗑️ Deleted successfully!");
+        alert("🗑️ Donation removed successfully!");
         loadDonations();
-      } else alert("❌ " + (data.message || "Delete failed."));
+      } else {
+        alert("❌ Delete failed: " + (data.message || ""));
+      }
     } catch (err) {
       console.error("Delete error:", err);
+      alert("❌ Error deleting donation.");
     }
   }
 
+  // ---------------- INITIAL LOAD ----------------
   loadDonations();
-  </script>
+</script>
+
 </body>
 </html>
+
 
 
 
