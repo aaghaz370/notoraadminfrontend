@@ -6,82 +6,54 @@
   <title>Admin Login - Notora</title>
   <style>
     body {
-      font-family: "Poppins", sans-serif;
-      background: radial-gradient(circle at top, #000 0%, #111 100%);
-      color: #fff;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      margin: 0;
     }
     .login-box {
-      background: rgba(255,255,255,0.05);
-      padding: 40px;
-      border-radius: 12px;
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 10px;
       text-align: center;
-      width: 320px;
-      box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
-      backdrop-filter: blur(6px);
-    }
-    h2 {
-      color: #ff416c;
-      margin-bottom: 20px;
+      width: 300px;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
     }
     input, button {
       width: 100%;
       margin: 10px 0;
-      padding: 12px;
+      padding: 10px;
       border: none;
-      border-radius: 6px;
-      font-size: 1rem;
+      border-radius: 5px;
     }
     input {
       background: #222;
-      color: #fff;
-      text-align: center;
-    }
-    input:focus {
-      outline: 1px solid #ff416c;
+      color: white;
     }
     button {
-      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+      background: crimson;
       color: white;
       cursor: pointer;
-      font-weight: 600;
-      transition: 0.3s;
+      font-weight: bold;
     }
-    button:hover {
-      transform: scale(1.05);
-    }
-    .error {
-      color: #ff6363;
-      font-size: 0.9rem;
-      margin-top: 5px;
-      min-height: 20px;
-    }
+    button:hover { background: darkred; }
   </style>
 </head>
 <body>
   <div class="login-box">
     <h2>🔐 Admin Login</h2>
     <input type="password" id="password" placeholder="Enter Admin Password" />
-    <button id="loginBtn">Login</button>
-    <div class="error" id="errorMsg"></div>
+    <button onclick="login()">Login</button>
   </div>
 
   <script>
-   const API_URL = "https://notoraadminbackend-1.onrender.com/api/admin/login";
-
+    const API_URL = "https://notoraadminbackend-1.onrender.com/api/admin/login";
 
     async function login() {
       const password = document.getElementById("password").value.trim();
-      const errorMsg = document.getElementById("errorMsg");
-
-      if (!password) {
-        errorMsg.textContent = "Please enter password.";
-        return;
-      }
 
       try {
         const res = await fetch(API_URL, {
@@ -92,35 +64,17 @@
 
         const data = await res.json();
 
-        // if (res.ok && data.message === "ok") {
-        //   // ✅ Store a persistent login (no expiry until logout)
-        //   localStorage.setItem("isAdmin", "true");
-        //   errorMsg.style.color = "#00ff90";
-        //   errorMsg.textContent = "✅ Login successful! Redirecting...";
-        //   setTimeout(() => window.location.href = "index.html", 800);
-        // } 
-        if (res.ok && data.token) {
-  // Save admin auth
-  localStorage.setItem("isAdmin", "true");
-  localStorage.setItem("adminToken", data.token);
-  errorMsg.style.color = "#00ff90";
-  errorMsg.textContent = "✅ Login successful! Redirecting...";
-  setTimeout(() => window.location.href = "request.html", 800);
-}
-
-        else {
-          errorMsg.textContent = "❌ Wrong password!";
+        if (res.ok && data.message === "ok") {
+          localStorage.setItem("isAdmin", "true");
+          window.location.href = "index.html";
+        } else {
+          alert("❌ Wrong password!");
         }
       } catch (err) {
         console.error(err);
-        errorMsg.textContent = "⚠️ Server not reachable";
+        alert("⚠️ Server not reachable");
       }
     }
-
-    document.getElementById("loginBtn").addEventListener("click", login);
   </script>
 </body>
 </html>
-
-
-
