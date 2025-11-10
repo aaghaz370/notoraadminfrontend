@@ -321,20 +321,6 @@ allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
   </script>
-<script>
-  // ✅ Require login before showing any admin page
-  if (!localStorage.getItem("isAdmin")) {
-    alert("⚠️ Please login first!");
-    window.location.href = "login.html";
-  }
-
-  // ✅ Add logout button (optional)
-  function logoutAdmin() {
-    localStorage.removeItem("isAdmin");
-    alert("You have been logged out.");
-    window.location.href = "login.html";
-  }
-</script>
 
 
 
@@ -343,6 +329,7 @@ allBooks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
 </body>
 </html>
+
 
 
 
