@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NT Points Manager | Admin</title>
+  <style>
+    body { background:#0f0f0f; color:#fff; font-family:Poppins,sans-serif; padding:20px; }
+    h1 { color:#ff416c; text-align:center; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th,td { padding:10px; border:1px solid rgba(255,255,255,0.2); }
+    input,button { padding:8px; border-radius:5px; border:none; }
+    button { background:#ff416c; color:#fff; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <h1>NT Points Manager</h1>
+  <div>
+    <input type="email" id="email" placeholder="User Email" />
+    <input type="number" id="points" placeholder="Add Points" />
+    <button onclick="addPoints()">Add NT</button>
+  </div>
+  <div id="msg"></div>
+  <table id="table"><thead><tr><th>Name</th><th>Email</th><th>Points</th></tr></thead><tbody></tbody></table>
+
+  <script>
+    const API = "https://notoraadminbackend-1.onrender.com/api/admin";
+    const token = localStorage.getItem("adminToken");
+
+    async function loadUsers() {
+      const res = await fetch(`${API}/ntpoints`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      const tbody = document.querySelector("#table tbody");
+      tbody.innerHTML = data.map(u =>
+        `<tr><td>${u.name}</td><td>${u.email}</td><td>${u.achievements?.points || 0}</td></tr>`
+      ).join("");
+    }
+
+    async function addPoints() {
+      const email = document.getElementById("email").value.trim();
+      const points = document.getElementById("points").value.trim();
+      const msg = document.getElementById("msg");
+
+      if (!email || !points) return msg.textContent = "Fill both fields";
+
+      const res = await fetch(`${API}/ntpoints/add`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email, points }),
+      });
+
+      const data = await res.json();
+      msg.textContent = data.message;
+      loadUsers();
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>
