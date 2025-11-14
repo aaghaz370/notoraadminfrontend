@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin • Notora — Notifications</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700,800&display=swap" rel="stylesheet">
+<script src="https://kit.fontawesome.com/1c020da525.js" crossorigin="anonymous"></script>
+
+<style>
+  :root{
+    --bg:#070707; --card:#121212; --muted:#bdbdbd; --accent:#e50914; --accent-2:#ff3c3c; --glass: rgba(255,255,255,0.03);
+    --radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Poppins",sans-serif;background:linear-gradient(180deg,#050505,#0b0b0b);color:#fff;padding:20px}
+  .wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start}
+  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:18px;border-radius:var(--radius);border:1px solid rgba(255,255,255,0.03);box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+  h2{color:var(--accent);font-size:1.15rem;margin-bottom:12px}
+  label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:6px}
+  input[type="text"], textarea, select {
+    width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#fff;
+    outline:none;font-size:0.95rem;
+  }
+  textarea{min-height:110px;resize:vertical}
+  .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));padding:10px 12px;border-radius:10px;border:none;color:#fff;font-weight:700;cursor:pointer}
+  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);font-weight:600}
+  .small{font-size:.85rem;color:var(--muted)}
+  .user-list{max-height:420px;overflow:auto;margin-top:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:rgba(0,0,0,0.25)}
+  .user-row{display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid rgba(255,255,255,0.02);cursor:pointer}
+  .user-row:hover{background:rgba(229,9,20,0.03)}
+  .user-row.selected{background:linear-gradient(90deg, rgba(229,9,20,0.08), rgba(255,60,60,0.02))}
+  .user-meta{flex:1;overflow:hidden}
+  .user-name{font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .user-email{color:var(--muted);font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .group-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .group-item{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02)}
+  .meta-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .search{display:flex;gap:8px;align-items:center}
+  .chip{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);font-size:.9rem;color:var(--muted)}
+  .note{font-size:.85rem;color:var(--muted);margin-top:8px}
+  .history{margin-top:14px;max-height:160px;overflow:auto;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03)}
+  .history-item{padding:8px;border-bottom:1px solid rgba(255,255,255,0.02)}
+  .right-col .form-row{margin-bottom:12px}
+  .flex{display:flex;gap:8px;align-items:center}
+  .muted{color:var(--muted)}
+  @media (max-width:980px){ .wrap{grid-template-columns:1fr; padding-bottom:40px} .user-list{max-height:240px} }
+</style>
+</head>
+<body>
+
+<div style="max-width:1200px;margin:0 auto;padding:6px 20px 24px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div style="display:flex;gap:12px;align-items:center">
+      <div style="font-size:20px;padding:8px;border-radius:10px;background:rgba(255,255,255,0.02)"><i class="fa-solid fa-bell"></i></div>
+      <h1 style="color:var(--accent);font-size:1.2rem;margin:0">Notifications • Admin Panel</h1>
+      <div style="font-size:.9rem;color:var(--muted)">Send targeted announcements to users</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" id="refreshUsersBtn"><i class="fa-solid fa-arrows-rotate"></i> Refresh users</button>
+      <button class="btn secondary" id="logoutBtn"><i class="fa-solid fa-sign-out"></i> Logout</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- LEFT: Users + Groups -->
+    <div class="panel">
+      <div class="top-bar">
+        <div>
+          <label class="small">Users</label>
+          <div class="small muted">Click to select (multi-select supported)</div>
+        </div>
+        <div class="search">
+          <input id="searchUser" type="text" placeholder="Search name or email" style="padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);color:#fff" />
+        </div>
+      </div>
+
+      <div class="meta-row">
+        <div class="chip" id="selectedCount">Selected: 0</div>
+        <div class="chip" id="totalUsers">Total: 0</div>
+        <div class="chip" title="Max saved groups">Groups saved: <span id="groupsCount">0</span>/12</div>
+      </div>
+
+      <div class="user-list" id="userList"></div>
+
+      <div style="margin-top:10px" class="controls">
+        <button class="btn secondary" id="clearSelectionBtn">Clear selection</button>
+        <button class="btn" id="saveGroupBtn"><i class="fa-solid fa-folder-plus"></i> Save Group</button>
+        <button class="btn secondary" id="loadGroupBtn"><i class="fa-solid fa-folder-open"></i> Load Group</button>
+      </div>
+
+      <div class="group-list" id="groupsArea" style="margin-top:12px"></div>
+
+      <div style="margin-top:12px">
+        <label class="small">Selection tools</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn secondary" id="copyIdsBtn"><i class="fa-regular fa-copy"></i> Copy IDs</button>
+          <button class="btn secondary" id="exportCsvBtn"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+        </div>
+      </div>
+
+      <div class="note">Tip: Save commonly-used recipient groups (e.g., "Top Readers", "Donors"). Groups stored locally in browser (up to 12).</div>
+    </div>
+
+    <!-- RIGHT: Composer -->
+    <div class="panel right-col">
+      <h2>Compose Notification</h2>
+
+      <div class="form-row">
+        <label>Type</label>
+        <select id="notifType">
+          <option value="new_book">New Book Upload</option>
+          <option value="nt_added">NT Points Added</option>
+          <option value="update">Update / Announcement</option>
+          <option value="general">General</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label>Title</label>
+        <input id="notifTitle" type="text" placeholder="Short, attention-catching title" />
+      </div>
+
+      <div class="form-row">
+        <label>Message</label>
+        <textarea id="notifMessage" placeholder="Write your announcement / instructions"></textarea>
+      </div>
+
+      <div class="form-row">
+        <label>Send To</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <label style="display:flex;gap:6px;align-items:center"><input type="radio" name="targetMode" value="single" /> Single</label>
+          <label style="display:flex;gap:6px;align-items:center"><input type="radio" name="targetMode" value="group" checked /> Group / Multiple</label>
+          <label style="display:flex;gap:6px;align-items:center"><input type="radio" name="targetMode" value="all" /> All Users</label>
+        </div>
+        <div class="small muted" style="margin-top:8px">Single: use selected single user. Group: use selected users / saved groups. All: broadcasts to everyone.</div>
+      </div>
+
+      <div class="form-row">
+        <label>Optional link / data (bookId / url)</label>
+        <input id="notifMeta" type="text" placeholder="Optional: bookId or URL" />
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button class="btn" id="sendNotifBtn"><i class="fa-solid fa-paper-plane"></i> Send Notification</button>
+        <button class="btn secondary" id="previewBtn"><i class="fa-regular fa-eye"></i> Preview</button>
+        <button class="btn secondary" id="clearFormBtn"><i class="fa-solid fa-trash"></i> Clear</button>
+      </div>
+
+      <div class="history" id="sentHistory">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Local Send History</div>
+        <div id="historyList"></div>
+      </div>
+
+      <div style="margin-top:10px" class="note">Sends stored locally for quick review. Official records are in the DB (Notification model).</div>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" style="display:none;position:fixed;right:18px;bottom:18px;background:#111;padding:12px 16px;border-radius:8px;border:1px solid rgba(229,9,20,0.12);"></div>
+
+<script>
+/*
+  Admin Notifications Panel
+  - Requires valid admin token in localStorage.notoraToken
+  - If your users listing route is different, change USERS_API const below
+*/
+
+const USERS_API = "/api/users"; // <- change if your backend exposes user list at another path
+const SEND_API  = "/api/notifications/send"; // already defined in controllers
+const LOCAL_GROUPS_KEY = "notora_admin_groups";
+const LOCAL_HISTORY_KEY = "notora_admin_send_history";
+
+const token = localStorage.getItem("notoraToken");
+if (!token) {
+  alert("Admin token not found in localStorage. Please login as admin first.");
+}
+
+// UI refs
+const userListEl = document.getElementById("userList");
+const searchUserEl = document.getElementById("searchUser");
+const selectedCountEl = document.getElementById("selectedCount");
+const totalUsersEl = document.getElementById("totalUsers");
+const groupsCountEl = document.getElementById("groupsCount");
+const groupsArea = document.getElementById("groupsArea");
+const historyList = document.getElementById("historyList");
+const toast = document.getElementById("toast");
+
+let ALL_USERS = [];       // [{_id,name,email}]
+let FILTERED_USERS = [];
+let SELECTED = new Set(); // user ids
+let GROUPS = {};          // { name: [ids] } stored in localStorage
+let SEND_HISTORY = [];    // local history
+
+// load groups + history from localStorage
+function loadLocalState() {
+  try {
+    GROUPS = JSON.parse(localStorage.getItem(LOCAL_GROUPS_KEY) || "{}");
+    SEND_HISTORY = JSON.parse(localStorage.getItem(LOCAL_HISTORY_KEY) || "[]");
+  } catch (e) {
+    GROUPS = {};
+    SEND_HISTORY = [];
+  }
+  renderGroups();
+  renderHistory();
+}
+
+loadLocalState();
+
+// helpers
+function showToast(msg, ok=true) {
+  toast.style.display = "block";
+  toast.style.background = ok ? "linear-gradient(90deg,#062,#035)" : "#111";
+  toast.textContent = msg;
+  setTimeout(()=> toast.style.display = "none", 3500);
+}
+
+function setSelectedCount() {
+  selectedCountEl.textContent = `Selected: ${SELECTED.size}`;
+}
+
+// fetch users from backend (admin required)
+async function fetchUsers() {
+  try {
+    userListEl.innerHTML = `<div style="padding:12px;color:var(--muted)">Loading users...</div>`;
+    const res = await fetch(USERS_API, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error(`Users fetch failed (${res.status})`);
+    const data = await res.json();
+    // Expect array of users: [{_id,name,email}]
+    ALL_USERS = Array.isArray(data) ? data : (data.users || data.items || []);
+    FILTERED_USERS = ALL_USERS.slice();
+    totalUsersEl.textContent = `Total: ${ALL_USERS.length}`;
+    renderUserList();
+  } catch (err) {
+    console.error("Users fetch error:", err);
+    userListEl.innerHTML = `<div style="padding:12px;color:#ff8b8b">Failed to load users. Check USERS_API and token.</div>`;
+  }
+}
+
+fetchUsers();
+
+// render users list
+function renderUserList() {
+  if (!FILTERED_USERS || FILTERED_USERS.length === 0) {
+    userListEl.innerHTML = `<div style="padding:12px;color:var(--muted)">No users found</div>`;
+    return;
+  }
+  userListEl.innerHTML = "";
+  FILTERED_USERS.forEach(u => {
+    const r = document.createElement("div");
+    r.className = "user-row";
+    if (SELECTED.has(u._id)) r.classList.add("selected");
+    r.dataset.id = u._id;
+    r.innerHTML = `
+      <div style="width:40px;height:40px;border-radius:8px;background:linear-gradient(90deg,rgba(229,9,20,0.12),rgba(255,60,60,0.06));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">
+        ${(u.name||u.email||"U").charAt(0).toUpperCase()}
+      </div>
+      <div class="user-meta">
+        <div class="user-name">${escapeHtml(u.name || u.email || "Unknown")}</div>
+        <div class="user-email">${escapeHtml(u.email || "")}</div>
+      </div>
+      <div style="min-width:80px;text-align:right;color:var(--muted);font-size:.85rem">${u._id.slice(0,8)}..</div>
+    `;
+    r.onclick = () => toggleUserSelection(u._id, r);
+    userListEl.appendChild(r);
+  });
+  setSelectedCount();
+}
+
+// toggles
+function toggleUserSelection(id, rowEl) {
+  if (SELECTED.has(id)) {
+    SELECTED.delete(id);
+    rowEl.classList.remove("selected");
+  } else {
+    SELECTED.add(id);
+    rowEl.classList.add("selected");
+  }
+  setSelectedCount();
+}
+
+// search
+searchUserEl.addEventListener("input", ()=> {
+  const q = searchUserEl.value.trim().toLowerCase();
+  FILTERED_USERS = ALL_USERS.filter(u => (u.name||"").toLowerCase().includes(q) || (u.email||"").toLowerCase().includes(q));
+  renderUserList();
+});
+
+// clear selection
+document.getElementById("clearSelectionBtn").onclick = () => {
+  SELECTED.clear();
+  renderUserList();
+};
+
+// copy ids
+document.getElementById("copyIdsBtn").onclick = () => {
+  if (SELECTED.size === 0) return showToast("No users selected", false);
+  const text = Array.from(SELECTED).join(",");
+  navigator.clipboard.writeText(text).then(()=> showToast("Copied IDs to clipboard"));
+};
+
+// export CSV
+document.getElementById("exportCsvBtn").onclick = () => {
+  if (SELECTED.size === 0) return showToast("No users selected", false);
+  const rows = [["_id","name","email"]];
+  Array.from(SELECTED).forEach(id => {
+    const u = ALL_USERS.find(x => x._id === id);
+    if (u) rows.push([u._id, u.name || "", u.email || ""]);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `notora_selected_${Date.now()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showToast("CSV exported");
+};
+
+// Save Group
+document.getElementById("saveGroupBtn").onclick = async () => {
+  if (SELECTED.size === 0) return showToast("Select users first", false);
+  if (Object.keys(GROUPS).length >= 12) return showToast("Max 12 groups allowed", false);
+  const name = prompt("Group name (short):");
+  if (!name) return;
+  if (GROUPS[name]) {
+    const ok = confirm("Group name exists — overwrite?");
+    if (!ok) return;
+  }
+  GROUPS[name] = Array.from(SELECTED);
+  localStorage.setItem(LOCAL_GROUPS_KEY, JSON.stringify(GROUPS));
+  renderGroups();
+  showToast("Group saved");
+};
+
+// Load Group
+document.getElementById("loadGroupBtn").onclick = () => {
+  const names = Object.keys(GROUPS);
+  if (names.length === 0) return showToast("No groups saved", false);
+  const choice = prompt("Enter group name to load:\n" + names.join("\n"));
+  if (!choice) return;
+  if (!GROUPS[choice]) return showToast("Group not found", false);
+  SELECTED = new Set(GROUPS[choice]);
+  renderUserList();
+  showToast("Group loaded");
+};
+
+// render groups area
+function renderGroups() {
+  groupsArea.innerHTML = "";
+  const names = Object.keys(GROUPS);
+  groupsCountEl.textContent = names.length;
+  names.forEach(n => {
+    const el = document.createElement("div");
+    el.className = "group-item";
+    el.innerHTML = `<div style="font-weight:700">${escapeHtml(n)} <span style="color:var(--muted);font-weight:600">(${GROUPS[n].length})</span></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn secondary" data-name="${n}" onclick="loadGroup(event)">Load</button>
+        <button class="btn" data-name="${n}" onclick="applyGroup(event)">Apply</button>
+        <button class="btn secondary" data-name="${n}" onclick="delGroup(event)">Delete</button>
+      </div>`;
+    groupsArea.appendChild(el);
+  });
+}
+
+// group helpers (exposed functions called from inline onclick)
+window.loadGroup = function(e) {
+  const name = e.currentTarget.dataset.name;
+  SELECTED = new Set(GROUPS[name]);
+  renderUserList();
+  showToast("Group loaded");
+};
+window.applyGroup = function(e) {
+  const name = e.currentTarget.dataset.name;
+  // apply add to current selection
+  GROUPS[name].forEach(id => SELECTED.add(id));
+  renderUserList();
+  showToast("Group applied");
+};
+window.delGroup = function(e) {
+  const name = e.currentTarget.dataset.name;
+  if (!confirm(`Delete group "${name}"?`)) return;
+  delete GROUPS[name];
+  localStorage.setItem(LOCAL_GROUPS_KEY, JSON.stringify(GROUPS));
+  renderGroups();
+  showToast("Group deleted");
+};
+
+// preview and clear form
+document.getElementById("previewBtn").onclick = () => {
+  const title = document.getElementById("notifTitle").value.trim();
+  const message = document.getElementById("notifMessage").value.trim();
+  if (!title || !message) return showToast("Fill title and message to preview", false);
+  alert(`Preview\n\nTitle: ${title}\n\nMessage:\n${message}`);
+};
+document.getElementById("clearFormBtn").onclick = () => {
+  if (!confirm("Clear form?")) return;
+  document.getElementById("notifTitle").value = "";
+  document.getElementById("notifMessage").value = "";
+  document.getElementById("notifMeta").value = "";
+  document.getElementById("notifType").value = "general";
+  showToast("Cleared");
+};
+
+// send notification
+document.getElementById("sendNotifBtn").onclick = async () => {
+  const type = document.getElementById("notifType").value;
+  const title = document.getElementById("notifTitle").value.trim();
+  const message = document.getElementById("notifMessage").value.trim();
+  const meta = document.getElementById("notifMeta").value.trim();
+  const mode = document.querySelector('input[name="targetMode"]:checked').value;
+
+  if (!title || !message) return showToast("Title & message required", false);
+
+  let payload = { type, title, message };
+
+  if (mode === "all") {
+    payload.target = "all";
+    payload.userList = [];
+  } else if (mode === "single") {
+    if (SELECTED.size !== 1) return showToast("Select exactly one user for Single mode", false);
+    payload.target = "single";
+    payload.userList = Array.from(SELECTED)[0];
+  } else { // group
+    if (SELECTED.size === 0) return showToast("Select one or more users for Group mode", false);
+    payload.target = "group";
+    payload.userList = Array.from(SELECTED);
+  }
+
+  if (meta) payload.meta = meta;
+
+  // confirm
+  if (!confirm(`Send notification:\nType: ${type}\nTitle: ${title}\nTarget: ${payload.target}${payload.target!=='all' ? ` (${payload.userList.length || 1})` : ''}\n\nProceed?`)) return;
+
+  try {
+    const res = await fetch(SEND_API, {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || `Status ${res.status}`);
+
+    // add to local history
+    const h = { id: json.notif?._id || `local-${Date.now()}`, type, title, message, target: payload.target, recipients: payload.userList.length || (payload.userList?1:0), time: new Date().toISOString() };
+    SEND_HISTORY.unshift(h);
+    if (SEND_HISTORY.length > 200) SEND_HISTORY.pop();
+    localStorage.setItem(LOCAL_HISTORY_KEY, JSON.stringify(SEND_HISTORY));
+    renderHistory();
+
+    showToast("Notification sent", true);
+
+  } catch (err) {
+    console.error("Send error:", err);
+    showToast("Send failed: " + (err.message||"unknown"), false);
+  }
+};
+
+// render local send history
+function renderHistory() {
+  historyList.innerHTML = "";
+  if (!SEND_HISTORY.length) { historyList.innerHTML = `<div style="color:var(--muted);padding:6px">No recent sends</div>`; return; }
+  SEND_HISTORY.forEach(s => {
+    const el = document.createElement("div");
+    el.className = "history-item";
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">${escapeHtml(s.title)}</div><div style="color:var(--muted);font-size:.85rem">${new Date(s.time).toLocaleString()}</div></div>
+      <div style="color:var(--muted);font-size:.95rem;margin-top:6px">${escapeHtml(s.message)}</div>
+      <div style="margin-top:8px;color:var(--muted);font-size:.85rem">Target: ${s.target} • Recipients: ${s.recipients}</div>`;
+    historyList.appendChild(el);
+  });
+}
+
+// refresh users button
+document.getElementById("refreshUsersBtn").onclick = () => fetchUsers();
+
+// logout helper
+document.getElementById("logoutBtn").onclick = () => {
+  if (!confirm("Logout admin? (local token will be removed)")) return;
+  localStorage.removeItem("notoraToken");
+  location.reload();
+};
+
+// utility: escape html
+function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+</script>
+</body>
+</html>
