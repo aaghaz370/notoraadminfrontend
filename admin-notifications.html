@@ -438,7 +438,8 @@ document.getElementById("sendNotifBtn").onclick = async () => {
   if (!confirm(`Send notification:\nType: ${type}\nTitle: ${title}\nTarget: ${payload.target}${payload.target!=='all' ? ` (${payload.userList.length || 1})` : ''}\n\nProceed?`)) return;
 
   try {
-    const res = await fetch(SEND_API, {
+    const res = await fetch("https://notoraadminbackend-1.onrender.com/api/notifications/send", {
+
       method: "POST",
       headers: { "Content-Type":"application/json", "Authorization": `Bearer ${token}` },
       body: JSON.stringify(payload)
